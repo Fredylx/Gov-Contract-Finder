@@ -6,16 +6,13 @@
 //
 
 import SwiftUI
-import CoreData
 
 @main
-struct Gov_Contract_FinderApp: App {
-    let persistenceController = PersistenceController.shared
-
+struct GovContractFinderApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            SearchView()
         }
     }
 }
+
