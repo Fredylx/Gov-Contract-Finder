@@ -8,6 +8,7 @@ struct OpportunityDetailView: View {
     @State private var descriptionText: String? = nil
     @State private var isLoadingDescription = false
     @State private var descriptionUnavailableMessage: String? = nil
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -191,6 +192,14 @@ struct OpportunityDetailView: View {
                     Text("Attachments")
                         .font(.headline)
                         .padding(.top, 8)
+                    Button("Download All Attachments") {
+                        for link in resourceLinks {
+                            if let url = buildURL(link, apiKey: apiKey) {
+                                openURL(url)
+                            }
+                        }
+                    }
+                    .font(.headline)
                     ForEach(resourceLinks, id: \.self) { link in
                         if let url = buildURL(link, apiKey: apiKey) {
                             Link(linkLabel(for: url), destination: url)

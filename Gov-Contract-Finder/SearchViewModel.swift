@@ -12,6 +12,7 @@ import OSLog
 @Observable
 final class SearchViewModel {
     private let logger = Logger(subsystem: "Gov-Contract-Finder", category: "SearchViewModel")
+    private var debounceTask: Task<Void, Never>? = nil
 
     var searchText: String = ""
     var postedFrom: String? = nil
@@ -19,8 +20,38 @@ final class SearchViewModel {
     var naics: String? = nil
     var noticeType: String? = nil
     var setAsideCode: String? = nil
-    var sort: String = "postedDate"
-    var order: String = "desc"
+    enum SortOption: String, CaseIterable, Identifiable {
+        case postedNewest = "postedNewest"
+        case postedOldest = "postedOldest"
+        case titleAZ = "titleAZ"
+        case titleZA = "titleZA"
+
+        var id: String { rawValue }
+
+        var sort: String {
+            switch self {
+            case .postedNewest, .postedOldest:
+                return "postedDate"
+            case .titleAZ, .titleZA:
+                return "title"
+            }
+        }
+
+        var order: String {
+            switch self {
+            case .postedNewest:
+                return "desc"
+            case .postedOldest:
+                return "asc"
+            case .titleAZ:
+                return "asc"
+            case .titleZA:
+                return "desc"
+            }
+        }
+    }
+
+    var sortOption: SortOption = .postedNewest
     var opportunities: [Opportunity] = []
     var totalRecords: Int = 0
     var offset: Int = 0
@@ -60,6 +91,15 @@ final class SearchViewModel {
         postedTo = formatDate(now)
     }
 
+    func applyNAICSPreset(code: String, title: String) {
+        let now = Date()
+        let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: now) ?? now
+        searchText = title
+        naics = code
+        postedFrom = formatDate(sixMonthsAgo)
+        postedTo = formatDate(now)
+    }
+
     func search() async {
         if DebugSettings.shared.isEnabled {
             let currentText = searchText
@@ -68,8 +108,8 @@ final class SearchViewModel {
             let currentNaics = naics
             let currentNoticeType = noticeType
             let currentSetAside = setAsideCode
-            let currentSort = sort
-            let currentOrder = order
+            let currentSort = sortOption.sort
+            let currentOrder = sortOption.order
             logger.debug("search start text=\(currentText, privacy: .public) postedFrom=\(currentPostedFrom ?? "nil", privacy: .public) postedTo=\(currentPostedTo ?? "nil", privacy: .public) naics=\(currentNaics ?? "nil", privacy: .public) noticeType=\(currentNoticeType ?? "nil", privacy: .public) setAside=\(currentSetAside ?? "nil", privacy: .public) sort=\(currentSort, privacy: .public) order=\(currentOrder, privacy: .public)")
         }
         isLoading = true
@@ -108,8 +148,8 @@ final class SearchViewModel {
                     naics: naics,
                     noticeType: noticeType,
                     setAsideCode: setAsideCode,
-                    sort: sort,
-                    order: order,
+                    sort: sortOption.sort,
+                    order: sortOption.order,
                     limit: pageSize,
                     offset: offset
                 )
@@ -137,6 +177,15 @@ final class SearchViewModel {
         }
     }
 
+    func scheduleAutoSearch() {
+        debounceTask?.cancel()
+        debounceTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard let self else { return }
+            await self.search()
+        }
+    }
+
     func loadMore() async {
         if let lastLoadMoreAt, Date().timeIntervalSince(lastLoadMoreAt) < 0.8 {
             return
@@ -156,8 +205,8 @@ final class SearchViewModel {
                     naics: naics,
                     noticeType: noticeType,
                     setAsideCode: setAsideCode,
-                    sort: sort,
-                    order: order,
+                    sort: sortOption.sort,
+                    order: sortOption.order,
                     limit: pageSize,
                     offset: nextOffset
                 )

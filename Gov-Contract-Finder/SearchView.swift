@@ -7,6 +7,7 @@
 
 import SwiftUI
 import OSLog
+import UIKit
 
 struct SearchView: View {
     @State private var viewModel = SearchViewModel()
@@ -55,6 +56,7 @@ struct SearchView: View {
                             }
                         }
                         .padding(.top, 4)
+                        .padding(.horizontal, 20)
                     }
                 } else {
                     Text("Search for contracts to get started.")
@@ -66,6 +68,10 @@ struct SearchView: View {
             }
             .padding()
             .navigationTitle("Gov Contract Finder")
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Debug") {
