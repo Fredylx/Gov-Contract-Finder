@@ -11,7 +11,31 @@ import SwiftUI
 final class ThemeController {
     var colorScheme: ColorScheme? = nil
 
+    private let storageKey = "preferredColorScheme"
+
+    init() {
+        if let stored = UserDefaults.standard.string(forKey: storageKey) {
+            colorScheme = stored == "dark" ? .dark : stored == "light" ? .light : nil
+        }
+    }
+
     func toggle() {
-        colorScheme = colorScheme == .dark ? .light : .dark
+        switch colorScheme {
+        case .dark:
+            colorScheme = .light
+        case .light:
+            colorScheme = nil
+        default:
+            colorScheme = .dark
+        }
+        let value: String
+        if colorScheme == .dark {
+            value = "dark"
+        } else if colorScheme == .light {
+            value = "light"
+        } else {
+            value = "system"
+        }
+        UserDefaults.standard.set(value, forKey: storageKey)
     }
 }
