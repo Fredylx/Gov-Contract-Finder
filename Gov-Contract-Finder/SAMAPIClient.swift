@@ -57,8 +57,9 @@ final class SAMAPIClient {
         setAsideCode: String? = nil,
         sort: String? = "postedDate",
         order: String? = "desc",
-        limit: Int = 25
-    ) async throws -> [Opportunity] {
+        limit: Int = 25,
+        offset: Int = 0
+    ) async throws -> SAMResponse {
         if DebugSettings.shared.isEnabled {
             logger.debug("fetchOpportunities start query=\(query, privacy: .public) limit=\(limit)")
         }
@@ -85,7 +86,8 @@ final class SAMAPIClient {
             setAsideCode: setAsideCode,
             sort: sort,
             order: order,
-            limit: limit
+            limit: limit,
+            offset: offset
         ) else {
             if DebugSettings.shared.isEnabled {
                 logger.error("fetchOpportunities failed to build URL")
@@ -131,7 +133,7 @@ final class SAMAPIClient {
             if DebugSettings.shared.isEnabled {
                 self.logger.debug("fetchOpportunities decoded count=\(responseObj.opportunitiesData.count)")
             }
-            return responseObj.opportunitiesData
+            return responseObj
         } catch {
             if DebugSettings.shared.isEnabled {
                 self.logger.error("fetchOpportunities decode error=\(error.localizedDescription, privacy: .public)")
@@ -146,5 +148,7 @@ final class SAMAPIClient {
 
 struct SAMResponse: Decodable {
     let opportunitiesData: [Opportunity]
+    let totalRecords: Int?
+    let limit: Int?
+    let offset: Int?
 }
-

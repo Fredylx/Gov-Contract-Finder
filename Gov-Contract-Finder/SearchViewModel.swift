@@ -22,11 +22,20 @@ final class SearchViewModel {
     var sort: String = "postedDate"
     var order: String = "desc"
     var opportunities: [Opportunity] = []
+    var totalRecords: Int = 0
+    var offset: Int = 0
+    let pageSize: Int = 25
     var isLoading = false
+    var isLoadingMore = false
+    private var lastLoadMoreAt: Date? = nil
     var error: String?
 
     var hasResults: Bool {
         !opportunities.isEmpty
+    }
+
+    var canLoadMore: Bool {
+        totalRecords > opportunities.count
     }
 
     private func isValidDate(_ value: String?) -> Bool {
@@ -66,6 +75,8 @@ final class SearchViewModel {
         isLoading = true
         error = nil
         opportunities = []
+        totalRecords = 0
+        offset = 0
 
         if !isValidDate(postedFrom) || !isValidDate(postedTo) {
             error = "Invalid Date Entered. Expected date format is MM/dd/yyyy."
@@ -89,7 +100,7 @@ final class SearchViewModel {
         }
 
         do {
-            opportunities = try await SAMAPIClient.shared
+            let response = try await SAMAPIClient.shared
                 .fetchOpportunities(
                     query: searchText,
                     postedFrom: postedFrom,
@@ -98,8 +109,12 @@ final class SearchViewModel {
                     noticeType: noticeType,
                     setAsideCode: setAsideCode,
                     sort: sort,
-                    order: order
+                    order: order,
+                    limit: pageSize,
+                    offset: offset
                 )
+            opportunities = response.opportunitiesData
+            totalRecords = response.totalRecords ?? response.opportunitiesData.count
             if DebugSettings.shared.isEnabled {
                 let count = opportunities.count
                 logger.debug("search success count=\(count)")
@@ -120,5 +135,50 @@ final class SearchViewModel {
             let loading = isLoading
             logger.debug("search end isLoading=\(loading)")
         }
+    }
+
+    func loadMore() async {
+        if let lastLoadMoreAt, Date().timeIntervalSince(lastLoadMoreAt) < 0.8 {
+            return
+        }
+        guard !isLoadingMore, canLoadMore else { return }
+        isLoadingMore = true
+        lastLoadMoreAt = Date()
+        error = nil
+
+        let nextOffset = opportunities.count
+        do {
+            let response = try await SAMAPIClient.shared
+                .fetchOpportunities(
+                    query: searchText,
+                    postedFrom: postedFrom,
+                    postedTo: postedTo,
+                    naics: naics,
+                    noticeType: noticeType,
+                    setAsideCode: setAsideCode,
+                    sort: sort,
+                    order: order,
+                    limit: pageSize,
+                    offset: nextOffset
+                )
+            opportunities.append(contentsOf: response.opportunitiesData)
+            totalRecords = response.totalRecords ?? max(totalRecords, opportunities.count)
+            offset = nextOffset
+            if DebugSettings.shared.isEnabled {
+                let count = opportunities.count
+                logger.debug("loadMore success count=\(count)")
+            }
+        } catch let caughtError {
+            if let apiError = caughtError as? SAMAPIClient.APIError {
+                error = apiError.localizedDescription
+            } else {
+                error = "Failed to load more contracts."
+            }
+            if DebugSettings.shared.isEnabled {
+                logger.error("loadMore failed error=\(caughtError.localizedDescription, privacy: .public)")
+            }
+        }
+
+        isLoadingMore = false
     }
 }

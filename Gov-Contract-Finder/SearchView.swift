@@ -31,7 +31,27 @@ struct SearchView: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(viewModel.opportunities) { opportunity in
-                                OpportunityCardView(opportunity: opportunity)
+                                NavigationLink {
+                                    OpportunityDetailView(opportunity: opportunity)
+                                } label: {
+                                    OpportunityCardView(opportunity: opportunity)
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            if viewModel.canLoadMore {
+                                if viewModel.isLoadingMore {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.top, 8)
+                                } else {
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .onAppear {
+                                            Task { await viewModel.loadMore() }
+                                        }
+                                }
                             }
                         }
                         .padding(.top, 4)

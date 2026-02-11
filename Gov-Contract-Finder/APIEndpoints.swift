@@ -15,14 +15,15 @@ enum APIEndpoints {
     static func opportunities(
         apiKey: String,
         query: String,
-        postedFrom: String? = nil,   // YYYY-MM-DD
-        postedTo: String? = nil,     // YYYY-MM-DD
+        postedFrom: String? = nil,   // MM/dd/yyyy
+        postedTo: String? = nil,     // MM/dd/yyyy
         naics: String? = nil,
         noticeType: String? = nil,
         setAsideCode: String? = nil,
         sort: String? = "postedDate",
         order: String? = "desc",
-        limit: Int = 25
+        limit: Int = 25,
+        offset: Int = 0
     ) -> URL? {
         var components = URLComponents(string: "\(baseURL)/opportunities/v2/search")
         var items: [URLQueryItem] = [
@@ -37,6 +38,7 @@ enum APIEndpoints {
         if let setAsideCode { items.append(.init(name: "setAsideCode", value: setAsideCode)) }
         if let sort { items.append(.init(name: "sort", value: sort)) }
         if let order { items.append(.init(name: "order", value: order)) }
+        if offset > 0 { items.append(.init(name: "offset", value: String(offset))) }
         components?.queryItems = items
         if DebugSettings.shared.isEnabled {
             if components?.url == nil {
