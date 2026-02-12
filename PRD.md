@@ -120,6 +120,34 @@ Gov-Contract-Finder modernizes how small businesses discover and act on governme
 - Email actions with prefilled subject/body
 - “Open in SAM.gov” + copy link
 
+#### Detail view (deep breakdown)
+- Layout sections: Header, Meta, Contacts, Description, Documents, Links
+- Header: title, agency/office, parent path (if available)
+- Meta: posted date, response due, NAICS + description, set-aside, solicitation #
+- Contacts:
+  - If multiple: “Email all contacts” with CC
+  - List contact cards with name/title/type/email/phone
+  - Tap actions for mailto: and tel:
+- Description:
+  - If URL: attempt text load; handle PDF/ZIP as external
+  - If inline text: render trimmed content
+  - Provide “Copy description URL”
+- Documents:
+  - List resource links
+  - Open + share sheet + copy link per item
+- Links:
+  - Open in SAM.gov
+  - Additional info link
+  - Copy link actions
+- States:
+  - Loading state for description fetch
+  - Fallback message on failures
+  - Clipboard toast/alert
+- Visual polish:
+  - Optional card grouping per section
+  - Soft dividers between sections
+  - 44pt minimum touch targets
+
 ### Data + API
 - Map filters to SAM.gov params
 - Pagination (offset/limit + total count; verify in implementation)
