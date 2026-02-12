@@ -6,36 +6,52 @@
 //
 
 import SwiftUI
+import Observation
 
 @Observable
-final class ThemeController {
-    var colorScheme: ColorScheme? = nil
+class ThemeController {
+    var colorScheme: SwiftUI.ColorScheme? = nil
 
     private let storageKey = "preferredColorScheme"
 
     init() {
-        if let stored = UserDefaults.standard.string(forKey: storageKey) {
-            colorScheme = stored == "dark" ? .dark : stored == "light" ? .light : nil
+        let stored = UserDefaults.standard.string(forKey: storageKey)
+        switch stored {
+        case "dark":
+            colorScheme = .dark
+        case "light":
+            colorScheme = .light
+        default:
+            colorScheme = nil
         }
     }
 
     func toggle() {
+        // Cycle through: dark -> light -> system(nil) -> dark
         switch colorScheme {
-        case .dark:
+        case .some(.dark):
             colorScheme = .light
-        case .light:
+        case .some(.light):
             colorScheme = nil
-        default:
+        case .none:
             colorScheme = .dark
+        @unknown default:
+            // In case ColorScheme gains new cases in the future, fall back to system
+            colorScheme = nil
         }
+
         let value: String
-        if colorScheme == .dark {
+        switch colorScheme {
+        case .some(.dark):
             value = "dark"
-        } else if colorScheme == .light {
+        case .some(.light):
             value = "light"
-        } else {
+        case .none:
+            value = "system"
+        @unknown default:
             value = "system"
         }
         UserDefaults.standard.set(value, forKey: storageKey)
     }
 }
+

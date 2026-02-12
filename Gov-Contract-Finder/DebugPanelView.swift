@@ -16,6 +16,20 @@ struct DebugPanelView: View {
                     Text((APIKeyProvider.samKey() != nil) ? "SAM API Key: Found" : "SAM API Key: Not found")
                         .foregroundStyle((APIKeyProvider.samKey() != nil) ? .green : .red)
                 })
+                Section("Feature Flags", content: {
+                    Toggle("Enable NAICS Presets", isOn: Binding<Bool>(
+                        get: { settings.featureFlags.naicsPresetsEnabled },
+                        set: { settings.featureFlags.naicsPresetsEnabled = $0 }
+                    ))
+                    Toggle("Enable Sort Control", isOn: Binding<Bool>(
+                        get: { settings.featureFlags.sortControlEnabled },
+                        set: { settings.featureFlags.sortControlEnabled = $0 }
+                    ))
+                    Toggle("Enable Dark Mode Toggle", isOn: Binding<Bool>(
+                        get: { settings.featureFlags.darkModeToggleEnabled },
+                        set: { settings.featureFlags.darkModeToggleEnabled = $0 }
+                    ))
+                })
             })
             .navigationTitle("Debug")
         }

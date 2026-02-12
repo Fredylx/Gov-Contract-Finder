@@ -18,6 +18,7 @@ enum APIEndpoints {
         postedFrom: String? = nil,   // MM/dd/yyyy
         postedTo: String? = nil,     // MM/dd/yyyy
         naics: String? = nil,
+        agency: String? = nil,
         noticeType: String? = nil,
         setAsideCode: String? = nil,
         sort: String? = "postedDate",
@@ -34,6 +35,7 @@ enum APIEndpoints {
         if let postedFrom { items.append(.init(name: "postedFrom", value: postedFrom)) }
         if let postedTo { items.append(.init(name: "postedTo", value: postedTo)) }
         if let naics { items.append(.init(name: "naics", value: naics)) }
+        if let agency { items.append(.init(name: "department", value: agency)) }
         if let noticeType { items.append(.init(name: "noticeType", value: noticeType)) }
         if let setAsideCode { items.append(.init(name: "setAsideCode", value: setAsideCode)) }
         if let sort { items.append(.init(name: "sort", value: sort)) }

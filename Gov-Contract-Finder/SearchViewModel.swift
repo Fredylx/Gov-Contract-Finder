@@ -18,6 +18,7 @@ final class SearchViewModel {
     var postedFrom: String? = nil
     var postedTo: String? = nil
     var naics: String? = nil
+    var agency: String? = nil
     var noticeType: String? = nil
     var setAsideCode: String? = nil
     enum SortOption: String, CaseIterable, Identifiable {
@@ -106,11 +107,12 @@ final class SearchViewModel {
             let currentPostedFrom = postedFrom
             let currentPostedTo = postedTo
             let currentNaics = naics
+            let currentAgency = agency
             let currentNoticeType = noticeType
             let currentSetAside = setAsideCode
             let currentSort = sortOption.sort
             let currentOrder = sortOption.order
-            logger.debug("search start text=\(currentText, privacy: .public) postedFrom=\(currentPostedFrom ?? "nil", privacy: .public) postedTo=\(currentPostedTo ?? "nil", privacy: .public) naics=\(currentNaics ?? "nil", privacy: .public) noticeType=\(currentNoticeType ?? "nil", privacy: .public) setAside=\(currentSetAside ?? "nil", privacy: .public) sort=\(currentSort, privacy: .public) order=\(currentOrder, privacy: .public)")
+            logger.debug("search start text=\(currentText, privacy: .public) postedFrom=\(currentPostedFrom ?? "nil", privacy: .public) postedTo=\(currentPostedTo ?? "nil", privacy: .public) naics=\(currentNaics ?? "nil", privacy: .public) agency=\(currentAgency ?? "nil", privacy: .public) noticeType=\(currentNoticeType ?? "nil", privacy: .public) setAside=\(currentSetAside ?? "nil", privacy: .public) sort=\(currentSort, privacy: .public) order=\(currentOrder, privacy: .public)")
         }
         isLoading = true
         error = nil
@@ -146,6 +148,7 @@ final class SearchViewModel {
                     postedFrom: postedFrom,
                     postedTo: postedTo,
                     naics: naics,
+                    agency: agency,
                     noticeType: noticeType,
                     setAsideCode: setAsideCode,
                     sort: sortOption.sort,
@@ -203,6 +206,7 @@ final class SearchViewModel {
                     postedFrom: postedFrom,
                     postedTo: postedTo,
                     naics: naics,
+                    agency: agency,
                     noticeType: noticeType,
                     setAsideCode: setAsideCode,
                     sort: sortOption.sort,
