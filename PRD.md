@@ -44,6 +44,8 @@ Gov-Contract-Finder modernizes how small businesses discover and act on governme
 - Saved searches + notifications for updates
 - Expanded filters (agency, NAICS/PSC, location, set-aside)
 - Sorting options (relevance, posted date)
+- Share actions (share sheet with SAM.gov link + summary text)
+- Add additional contract sources (other websites/APIs) and evaluate scraper-based ingestion where allowed
 - Account system (optional) for cross-device sync
 
 ## 5) User Stories (MVP)
@@ -91,6 +93,7 @@ Gov-Contract-Finder modernizes how small businesses discover and act on governme
 ### Design system (AD + luxury noise)
 - Create theme tokens (colors, typography, spacing, radii)
 - Build `LuxuryBackground` (base + gradient + noise layer)
+- Add `noiseTexture` asset (512x512 PNG, grayscale, 2–3% opacity usage)
 - Define card style (radius 14–16, soft shadow)
 - Define button styles (primary teal, secondary navy)
 
@@ -119,7 +122,7 @@ Gov-Contract-Finder modernizes how small businesses discover and act on governme
 
 ### Data + API
 - Map filters to SAM.gov params
-- Pagination (offset/limit + total count)
+- Pagination (offset/limit + total count; verify in implementation)
 - Error mapping + friendly messages
 - Date formatting helper (display)
 
@@ -128,3 +131,20 @@ Gov-Contract-Finder modernizes how small businesses discover and act on governme
 - Loading state (skeleton / progress)
 - Accessibility labels + dynamic type
 - Light instrumentation for metrics
+
+## Appendix B) Phase 2 Checklist
+### Features
+- Favorites / saved opportunities (local only)
+- Saved searches + update alerts (local notifications)
+- Expanded filters: agency, NAICS/PSC, location, set-aside
+- Sorting options (relevance, posted date)
+- Share actions (share sheet with SAM.gov link + summary text)
+
+### Additional sources
+- Integrate other contract APIs (prioritize official APIs)
+- Scraper-based ingestion where allowed as a fallback
+
+### Data + UX
+- Cached results for faster repeat searches
+- Saved search management UI
+- Alerts configuration (frequency, opt-in)
