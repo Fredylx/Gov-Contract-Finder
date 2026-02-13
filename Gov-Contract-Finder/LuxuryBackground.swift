@@ -22,7 +22,7 @@ struct LuxuryBackground: View {
             Image("noiseTexture")
                 .resizable()
                 .scaledToFill()
-                .opacity(0.03)
+                .opacity(0.02)
                 .blendMode(.overlay)
         }
         .ignoresSafeArea()

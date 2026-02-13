@@ -9,14 +9,14 @@ import SwiftUI
 
 enum DesignSystem {
     enum Colors {
-        static let background = Color(hex: "#F5F7FA")
-        static let backgroundAlt = Color(hex: "#EEF2F6")
-        static let surface = Color(hex: "#FFFFFF")
-        static let primaryText = Color(hex: "#111827")
-        static let secondaryText = Color(hex: "#4B5563")
-        static let divider = Color(hex: "#E5E7EB")
-        static let accentTeal = Color(hex: "#1F9D8E")
-        static let accentNavy = Color(hex: "#233B59")
+        static let background = Color(hex: "#0B1220")
+        static let backgroundAlt = Color(hex: "#111827")
+        static let surface = Color(hex: "#141C2B")
+        static let primaryText = Color(hex: "#F8FAFC")
+        static let secondaryText = Color(hex: "#C7CEDB")
+        static let divider = Color(hex: "#263143")
+        static let accentTeal = Color(hex: "#2CBFAE")
+        static let accentNavy = Color(hex: "#4B6A96")
     }
 
     enum Typography {
