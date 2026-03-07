@@ -6,17 +6,18 @@
 //
 
 import SwiftUI
+import UIKit
 
 enum DesignSystem {
     enum Colors {
-        static let background = Color(hex: "#0B1220")
-        static let backgroundAlt = Color(hex: "#111827")
-        static let surface = Color(hex: "#141C2B")
-        static let primaryText = Color(hex: "#F8FAFC")
-        static let secondaryText = Color(hex: "#C7CEDB")
-        static let divider = Color(hex: "#263143")
-        static let accentTeal = Color(hex: "#2CBFAE")
-        static let accentNavy = Color(hex: "#4B6A96")
+        static let background = dynamicColor(light: "#F5F7FA", dark: "#0B1220")
+        static let backgroundAlt = dynamicColor(light: "#EEF2F6", dark: "#111827")
+        static let surface = dynamicColor(light: "#FFFFFF", dark: "#141C2B")
+        static let primaryText = dynamicColor(light: "#111827", dark: "#F8FAFC")
+        static let secondaryText = dynamicColor(light: "#4B5563", dark: "#C7CEDB")
+        static let divider = dynamicColor(light: "#E5E7EB", dark: "#263143")
+        static let accentTeal = dynamicColor(light: "#1F9D8E", dark: "#2CBFAE")
+        static let accentNavy = dynamicColor(light: "#233B59", dark: "#4B6A96")
     }
 
     enum Typography {
@@ -83,5 +84,38 @@ extension Color {
                   green: Double(g) / 255,
                   blue: Double(b) / 255,
                   opacity: Double(a) / 255)
+    }
+}
+
+private extension DesignSystem.Colors {
+    static func dynamicColor(light: String, dark: String) -> Color {
+        let lightColor = uiColor(hex: light)
+        let darkColor = uiColor(hex: dark)
+        return Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? darkColor : lightColor
+        })
+    }
+
+    static func uiColor(hex: String) -> UIColor {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 8:
+            a = (int >> 24) & 0xFF
+            r = (int >> 16) & 0xFF
+            g = (int >> 8) & 0xFF
+            b = int & 0xFF
+        default:
+            a = 0xFF
+            r = (int >> 16) & 0xFF
+            g = (int >> 8) & 0xFF
+            b = int & 0xFF
+        }
+        return UIColor(red: CGFloat(r) / 255,
+                       green: CGFloat(g) / 255,
+                       blue: CGFloat(b) / 255,
+                       alpha: CGFloat(a) / 255)
     }
 }

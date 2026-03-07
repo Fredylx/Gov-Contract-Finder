@@ -3,246 +3,55 @@ import UIKit
 
 struct OpportunityDetailView: View {
     let opportunity: Opportunity
+    let watchlistStore: WatchlistStore
+    let alertsStore: AlertsStore
+    let workspaceStore: WorkspaceStore
     private let apiKey = APIKeyProvider.samKey()
+
     @State private var showCopied = false
     @State private var descriptionText: String? = nil
     @State private var isLoadingDescription = false
     @State private var descriptionUnavailableMessage: String? = nil
 
+    @MainActor
+    init(opportunity: Opportunity) {
+        self.init(
+            opportunity: opportunity,
+            watchlistStore: .shared,
+            alertsStore: .shared,
+            workspaceStore: .shared
+        )
+    }
+
+    @MainActor
+    init(
+        opportunity: Opportunity,
+        watchlistStore: WatchlistStore,
+        alertsStore: AlertsStore,
+        workspaceStore: WorkspaceStore
+    ) {
+        self.opportunity = opportunity
+        self.watchlistStore = watchlistStore
+        self.alertsStore = alertsStore
+        self.workspaceStore = workspaceStore
+    }
+
     var body: some View {
         ZStack {
-            LuxuryBackground()
+            CyberpunkBackgroundV2()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.l) {
-                    Text(opportunity.title)
-                        .font(DesignSystem.Typography.titleL)
-                        .foregroundStyle(DesignSystem.Colors.primaryText)
-
-                    SectionCard {
-                        if let agency = opportunity.agency {
-                            DetailRow(label: "Agency", value: agency)
-                        }
-
-                        if let office = opportunity.office {
-                            DetailRow(label: "Office", value: office)
-                        }
-
-                        if let parentName = opportunity.fullParentPathName {
-                            DetailRow(label: "Parent Path", value: parentName)
-                        }
-
-                        if let parentCode = opportunity.fullParentPathCode {
-                            DetailRow(label: "Parent Code", value: parentCode)
-                        }
-
-                        if let solicitationNumber = opportunity.solicitationNumber {
-                            DetailRow(label: "Solicitation #", value: solicitationNumber)
-                        }
-
-                        if let postedDate = opportunity.postedDate {
-                            DetailRow(label: "Posted", value: formatDate(postedDate) ?? postedDate)
-                        }
-
-                        if let responseDate = opportunity.responseDate {
-                            DetailRow(label: "Response Due", value: formatDate(responseDate) ?? responseDate)
-                        }
-
-                        if let naicsCode = opportunity.naicsCode {
-                            if let naicsDescription = opportunity.naicsDescription {
-                                DetailRow(label: "NAICS", value: "\(naicsCode) — \(naicsDescription)")
-                            } else {
-                                DetailRow(label: "NAICS", value: naicsCode)
-                            }
-                        }
-
-                        if let setAsideCode = opportunity.setAsideCode {
-                            DetailRow(label: "Set-Aside", value: setAsideCode)
-                        }
-                    }
-
-                    if !opportunity.contacts.isEmpty {
-                        SectionCard {
-                            SectionHeader("Contacts")
-                            if let emailLinkLabel = emailLinkLabel(for: opportunity.contacts),
-                               let emailAllURL = mailtoURL(
-                                   to: primaryEmail(from: opportunity.contacts),
-                                   cc: ccEmails(from: opportunity.contacts),
-                                   subject: "Contract Opportunity: \(opportunity.title)",
-                                   body: emailBody(for: opportunity)
-                               ) {
-                                Link(emailLinkLabel, destination: emailAllURL)
-                                    .font(DesignSystem.Typography.body.weight(.semibold))
-                                    .foregroundStyle(DesignSystem.Colors.accentTeal)
-                                    .accessibilityLabel(emailLinkLabel)
-                            }
-                            ForEach(opportunity.contacts) { contact in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    if let name = contact.fullName {
-                                        Text(name)
-                                            .font(DesignSystem.Typography.body.weight(.semibold))
-                                    }
-                                    if let title = contact.title, !title.isEmpty {
-                                        Text(title)
-                                            .font(DesignSystem.Typography.body)
-                                            .foregroundStyle(DesignSystem.Colors.secondaryText)
-                                    }
-                                    if let type = contact.type, !type.isEmpty {
-                                        Text("Type: \(type)")
-                                            .font(DesignSystem.Typography.caption)
-                                            .foregroundStyle(DesignSystem.Colors.secondaryText)
-                                    }
-                                    if let email = contact.email {
-                                        Text("Email: \(email)")
-                                            .font(DesignSystem.Typography.body)
-                                    }
-                                if let phone = contact.phone, !phone.isEmpty {
-                                    Text("Phone: \(phone)")
-                                        .font(DesignSystem.Typography.body)
-                                    if let telURL = telURL(phone) {
-                                        Link("Call \(phone)", destination: telURL)
-                                            .font(DesignSystem.Typography.body.weight(.semibold))
-                                            .foregroundStyle(DesignSystem.Colors.accentNavy)
-                                            .accessibilityLabel("Call \(phone)")
-                                    }
-                                }
-                                    if let fax = contact.fax, !fax.isEmpty {
-                                        Text("Fax: \(fax)")
-                                            .font(DesignSystem.Typography.body)
-                                            .foregroundStyle(DesignSystem.Colors.secondaryText)
-                                    }
-                                }
-                                .padding(.vertical, 6)
-                            }
-                        }
-                    } else {
-                        SectionCard {
-                            SectionHeader("Contacts")
-                            if let contactName = opportunity.contactName {
-                                DetailRow(label: "Contact", value: contactName)
-                            }
-
-                            if let contactEmail = opportunity.contactEmail {
-                                DetailRow(label: "Email", value: contactEmail)
-                                if let emailLinkLabel = emailLinkLabel(for: opportunity),
-                                   let mailURL = mailtoURL(
-                                       to: contactEmail,
-                                       cc: [],
-                                       subject: "Contract Opportunity: \(opportunity.title)",
-                                       body: emailBody(for: opportunity)
-                                   ) {
-                                    Link(emailLinkLabel, destination: mailURL)
-                                        .font(DesignSystem.Typography.body.weight(.semibold))
-                                        .foregroundStyle(DesignSystem.Colors.accentTeal)
-                                        .accessibilityLabel(emailLinkLabel)
-                                }
-                            }
-
-                            if let contactPhone = opportunity.contactPhone {
-                                DetailRow(label: "Phone", value: contactPhone)
-                                if let tel = telURL(contactPhone) {
-                                    Link("Call \(contactPhone)", destination: tel)
-                                        .font(DesignSystem.Typography.body.weight(.semibold))
-                                        .foregroundStyle(DesignSystem.Colors.accentNavy)
-                                        .accessibilityLabel("Call \(contactPhone)")
-                                }
-                            }
-                        }
-                    }
-
-                    let descriptionLink = opportunity.description
-                    if let descriptionLink,
-                       let url = buildURL(descriptionLink, apiKey: apiKey),
-                       isLikelyURL(descriptionLink) {
-                        SectionCard {
-                            SectionHeader("Description")
-                            if isLoadingDescription {
-                                ProgressView("Loading description...")
-                                    .padding(.top, 4)
-                            } else if let descriptionText {
-                                Text(descriptionText)
-                                    .font(DesignSystem.Typography.body)
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                            } else if let descriptionUnavailableMessage {
-                                Text(descriptionUnavailableMessage)
-                                    .font(DesignSystem.Typography.body)
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                            } else {
-                                Text("Unable to load description.")
-                                    .font(DesignSystem.Typography.body)
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                            }
-                            CopyLinkButton(label: "Copy Description URL", url: url, showCopied: $showCopied)
-                        }
-                    }
-
-                    if let description = opportunity.description, !isLikelyURL(description) {
-                        SectionCard {
-                            SectionHeader("Description")
-                            Text(description)
-                                .font(DesignSystem.Typography.body)
-                                .foregroundStyle(DesignSystem.Colors.secondaryText)
-                        }
-                    }
-
-                    if let infoLink = opportunity.additionalInfoLink,
-                       let url = buildURL(infoLink, apiKey: apiKey) {
-                        SectionCard {
-                            SectionHeader("Additional Info")
-                            Link("Open Additional Info", destination: url)
-                                .font(DesignSystem.Typography.body.weight(.semibold))
-                                .foregroundStyle(DesignSystem.Colors.accentNavy)
-                                .accessibilityLabel("Open additional info link")
-                            ShareLink(item: url) {
-                                Text("Share Additional Info")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                            }
-                            CopyLinkButton(label: "Copy Additional Info URL", url: url, showCopied: $showCopied)
-                        }
-                    }
-
-                    if let uiLink = opportunity.uiLink,
-                       let url = URL(string: uiLink) {
-                        SectionCard {
-                            SectionHeader("SAM.gov")
-                            Link("Open in SAM.gov", destination: url)
-                                .font(DesignSystem.Typography.body.weight(.semibold))
-                                .foregroundStyle(DesignSystem.Colors.accentNavy)
-                                .accessibilityLabel("Open in SAM.gov")
-                            ShareLink(item: url) {
-                                Text("Share SAM.gov Link")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                            }
-                            CopyLinkButton(label: "Copy SAM.gov URL", url: url, showCopied: $showCopied)
-                        }
-                    }
-
-                    if let resourceLinks = opportunity.resourceLinks, !resourceLinks.isEmpty {
-                        SectionCard {
-                            SectionHeader("Attachments")
-                            ForEach(resourceLinks, id: \.self) { link in
-                                if let url = buildURL(link, apiKey: apiKey) {
-                                    Link(linkLabel(for: url), destination: url)
-                                        .font(DesignSystem.Typography.body)
-                                        .foregroundStyle(DesignSystem.Colors.accentNavy)
-                                        .accessibilityLabel("Open attachment")
-                                    ShareLink(item: url) {
-                                        Text("Share Attachment")
-                                            .font(DesignSystem.Typography.caption)
-                                            .foregroundStyle(DesignSystem.Colors.secondaryText)
-                                    }
-                                    CopyLinkButton(label: "Copy Attachment URL", url: url, showCopied: $showCopied)
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(maxWidth: 720, alignment: .leading)
-                .padding()
+            SafeEdgeScrollColumn {
+                headerCard
+                metadataSection
+                contactsSection
+                descriptionSection
+                additionalInfoSection
+                samSection
+                attachmentsSection
             }
+            .accessibilityIdentifier("opportunity_detail_scroll")
         }
+        .accessibilityIdentifier("opportunity_detail_screen")
         .navigationTitle("Opportunity")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Copied to Clipboard", isPresented: $showCopied) {
@@ -252,51 +61,304 @@ struct OpportunityDetailView: View {
             await loadDescriptionIfNeeded()
         }
     }
-}
 
-private struct DetailRow: View {
-    let label: String
-    let value: String
+    private var headerCard: some View {
+        NeoCard {
+            BoundedBodyText(
+                value: opportunity.title,
+                font: DesignTokensV2.Typography.title,
+                color: DesignTokensV2.Colors.textPrimary
+            )
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+            if let solicitationNumber = opportunity.solicitationNumber, !solicitationNumber.isEmpty {
+                BadgeV2(text: "Solicitation \(solicitationNumber)", color: DesignTokensV2.Colors.accentViolet)
+            }
+
+            HStack(spacing: DesignTokensV2.Spacing.s) {
+                NeonButton(title: watchlistStore.contains(opportunityID: opportunity.id) ? "Saved" : "Save to Watchlist", icon: "bookmark") {
+                    if !watchlistStore.contains(opportunityID: opportunity.id) {
+                        watchlistStore.add(opportunity)
+                        alertsStore.addAlert(
+                            type: .statusChange,
+                            title: "Watchlist Updated",
+                            message: "Saved \(opportunity.title)",
+                            opportunityID: opportunity.id
+                        )
+                    }
+                }
+
+                Button {
+                    _ = workspaceStore.record(for: opportunity.id, fallbackTitle: opportunity.title)
+                    alertsStore.addAlert(
+                        type: .statusChange,
+                        title: "Workspace Ready",
+                        message: opportunity.title,
+                        opportunityID: opportunity.id
+                    )
+                } label: {
+                    Text("Open Workspace")
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .padding(.horizontal, DesignTokensV2.Spacing.s)
+                        .padding(.vertical, DesignTokensV2.Spacing.s)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                .fill(DesignTokensV2.Colors.surface2)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var metadataSection: some View {
+        NeoCard {
+            sectionHeader("Overview")
+
+            if let agency = opportunity.agency {
+                detailRow(label: "Agency", value: agency)
+            }
+
+            if let office = opportunity.office {
+                detailRow(label: "Office", value: office)
+            }
+
+            if let parentName = opportunity.fullParentPathName {
+                detailRow(label: "Parent Path", value: parentName)
+            }
+
+            if let parentCode = opportunity.fullParentPathCode {
+                detailRow(label: "Parent Code", value: parentCode)
+            }
+
+            if let postedDate = opportunity.postedDate {
+                detailRow(label: "Posted", value: formatDate(postedDate) ?? postedDate)
+            }
+
+            if let responseDate = opportunity.responseDate {
+                detailRow(label: "Response Due", value: formatDate(responseDate) ?? responseDate)
+            }
+
+            if let naicsCode = opportunity.naicsCode {
+                if let naicsDescription = opportunity.naicsDescription {
+                    detailRow(label: "NAICS", value: "\(naicsCode) — \(naicsDescription)")
+                } else {
+                    detailRow(label: "NAICS", value: naicsCode)
+                }
+            }
+
+            if let setAsideCode = opportunity.setAsideCode {
+                detailRow(label: "Set-Aside", value: setAsideCode)
+            }
+        }
+    }
+
+    private var contactsSection: some View {
+        NeoCard {
+            sectionHeader("Contacts")
+
+            if !opportunity.contacts.isEmpty {
+                if let emailLinkLabel = emailLinkLabel(for: opportunity.contacts),
+                   let emailAllURL = mailtoURL(
+                    to: primaryEmail(from: opportunity.contacts),
+                    cc: ccEmails(from: opportunity.contacts),
+                    subject: "Contract Opportunity: \(opportunity.title)",
+                    body: emailBody(for: opportunity)
+                   ) {
+                    Link(destination: emailAllURL) {
+                        BoundedBodyText(
+                            value: emailLinkLabel,
+                            font: DesignTokensV2.Typography.bodyStrong,
+                            color: DesignTokensV2.Colors.accentCyan
+                        )
+                    }
+                    .accessibilityLabel(emailLinkLabel)
+                }
+
+                ForEach(opportunity.contacts) { contact in
+                    ContactRowV2(contact: contact)
+                }
+            } else {
+                fallbackContactDetails
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var fallbackContactDetails: some View {
+        if let contactName = opportunity.contactName {
+            detailRow(label: "Contact", value: contactName)
+        }
+
+        if let contactEmail = opportunity.contactEmail {
+            detailRow(label: "Email", value: contactEmail)
+        }
+
+        if let contactPhone = opportunity.contactPhone {
+            detailRow(label: "Phone", value: contactPhone)
+        }
+    }
+
+    @ViewBuilder
+    private var descriptionSection: some View {
+        if let descriptionValue = opportunity.description,
+           isLikelyURL(descriptionValue),
+           let url = buildURL(descriptionValue, apiKey: apiKey) {
+            NeoCard {
+                sectionHeader("Description")
+
+                if isLoadingDescription {
+                    ProgressView("Loading description...")
+                        .tint(DesignTokensV2.Colors.accentCyan)
+                } else if let descriptionText {
+                    BoundedBodyText(value: descriptionText, color: DesignTokensV2.Colors.textPrimary)
+                } else if let descriptionUnavailableMessage {
+                    BoundedBodyText(value: descriptionUnavailableMessage)
+                }
+
+                Link(destination: url) {
+                    BoundedBodyText(value: "Open Description URL", color: DesignTokensV2.Colors.accentCyan)
+                }
+                CopyLinkButton(label: "Copy Description URL", url: url, showCopied: $showCopied)
+            }
+        } else if let descriptionValue = opportunity.description {
+            NeoCard {
+                sectionHeader("Description")
+                BoundedBodyText(
+                    value: OpportunityDetailTextFormatter.descriptionDisplayText(from: descriptionValue),
+                    color: DesignTokensV2.Colors.textPrimary
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var additionalInfoSection: some View {
+        if let infoLink = opportunity.additionalInfoLink,
+           let url = buildURL(infoLink, apiKey: apiKey) {
+            NeoCard {
+                sectionHeader("Additional Info")
+
+                Link(destination: url) {
+                    BoundedBodyText(value: "Open Additional Info", color: DesignTokensV2.Colors.accentCyan)
+                }
+
+                ShareLink(item: url) {
+                    Text("Share Additional Info")
+                        .font(DesignTokensV2.Typography.caption)
+                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                }
+
+                CopyLinkButton(label: "Copy Additional Info URL", url: url, showCopied: $showCopied)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var samSection: some View {
+        if let uiLink = opportunity.uiLink,
+           let url = URL(string: uiLink) {
+            NeoCard {
+                sectionHeader("SAM.gov")
+
+                Link(destination: url) {
+                    BoundedBodyText(value: "Open in SAM.gov", color: DesignTokensV2.Colors.accentCyan)
+                }
+
+                ShareLink(item: url) {
+                    Text("Share SAM.gov Link")
+                        .font(DesignTokensV2.Typography.caption)
+                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                }
+
+                CopyLinkButton(label: "Copy SAM.gov URL", url: url, showCopied: $showCopied)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var attachmentsSection: some View {
+        if let resourceLinks = opportunity.resourceLinks,
+           !resourceLinks.isEmpty {
+            NeoCard {
+                sectionHeader("Attachments")
+                ForEach(resourceLinks, id: \.self) { link in
+                    if let url = buildURL(link, apiKey: apiKey) {
+                        Link(destination: url) {
+                            BoundedBodyText(
+                                value: linkLabel(for: url),
+                                color: DesignTokensV2.Colors.accentCyan
+                            )
+                        }
+
+                        ShareLink(item: url) {
+                            Text("Share Attachment")
+                                .font(DesignTokensV2.Typography.caption)
+                                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                        }
+
+                        CopyLinkButton(label: "Copy Attachment URL", url: url, showCopied: $showCopied)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func detailRow(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
             Text(label)
-                .font(DesignSystem.Typography.caption)
-                .foregroundStyle(DesignSystem.Colors.secondaryText)
-            Text(value)
-                .font(DesignSystem.Typography.body)
-                .foregroundStyle(DesignSystem.Colors.primaryText)
+                .font(DesignTokensV2.Typography.caption)
+                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+            BoundedBodyText(value: value, color: DesignTokensV2.Colors.textPrimary)
         }
     }
-}
 
-private struct SectionHeader: View {
-    let title: String
-
-    init(_ title: String) {
-        self.title = title
-    }
-
-    var body: some View {
+    private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DesignSystem.Typography.titleM)
-            .foregroundStyle(DesignSystem.Colors.primaryText)
-            .padding(.top, 2)
-    }
-}
-
-private struct SectionCard<Content: View>: View {
-    let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
+            .font(DesignTokensV2.Typography.section)
+            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.s) {
-            content
+    private func loadDescriptionIfNeeded() async {
+        guard let descriptionLink = opportunity.description,
+              isLikelyURL(descriptionLink),
+              let url = buildURL(descriptionLink, apiKey: apiKey),
+              descriptionText == nil,
+              !isLoadingDescription
+        else { return }
+
+        isLoadingDescription = true
+        defer { isLoadingDescription = false }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            if let http = response as? HTTPURLResponse,
+               let contentType = http.value(forHTTPHeaderField: "Content-Type")?.lowercased() {
+                if contentType.contains("application/pdf") {
+                    descriptionUnavailableMessage = "Description is a PDF. Use the description link above to open it."
+                    return
+                }
+                if !contentType.contains("text") && !contentType.contains("json") && !contentType.contains("xml") {
+                    descriptionUnavailableMessage = "Description is not plain text. Use the description link above to open it."
+                    return
+                }
+            }
+
+            if let text = String(data: data, encoding: .utf8) {
+                let normalized = OpportunityDetailTextFormatter.descriptionDisplayText(from: text)
+                if normalized.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    descriptionUnavailableMessage = "Description is empty. Use the description link above to open it."
+                } else {
+                    descriptionText = normalized
+                    descriptionUnavailableMessage = nil
+                }
+            } else {
+                descriptionUnavailableMessage = "Description is not readable text. Use the description link above to open it."
+            }
+        } catch {
+            descriptionUnavailableMessage = "Unable to load description. Use the description link above to open it."
         }
-        .cardStyle()
     }
 }
 
@@ -321,58 +383,6 @@ private func isLikelyURL(_ value: String) -> Bool {
     value.lowercased().hasPrefix("http://") || value.lowercased().hasPrefix("https://")
 }
 
-private func stripHTML(_ input: String) -> String {
-    input.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-}
-
-private extension OpportunityDetailView {
-    func loadDescriptionIfNeeded() async {
-        guard let descriptionLink = opportunity.description,
-              isLikelyURL(descriptionLink),
-              let url = buildURL(descriptionLink, apiKey: apiKey),
-              descriptionText == nil,
-              !isLoadingDescription
-        else { return }
-
-        isLoadingDescription = true
-        defer { isLoadingDescription = false }
-
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            if let http = response as? HTTPURLResponse,
-               let contentType = http.value(forHTTPHeaderField: "Content-Type")?.lowercased() {
-                if contentType.contains("application/pdf") {
-                    descriptionUnavailableMessage = "Description is a PDF. Use the Description link above to open it."
-                    descriptionText = nil
-                    return
-                }
-                if !contentType.contains("text") && !contentType.contains("json") && !contentType.contains("xml") {
-                    descriptionUnavailableMessage = "Description is not plain text. Use the Description link above to open it."
-                    descriptionText = nil
-                    return
-                }
-            }
-
-            if let text = String(data: data, encoding: .utf8) {
-                let cleaned = stripHTML(text).trimmingCharacters(in: .whitespacesAndNewlines)
-                let normalized = normalizeDescription(cleaned)
-                if cleaned.isEmpty {
-                    descriptionUnavailableMessage = "Description is empty. Use the Description link above to open it."
-                } else {
-                    descriptionText = normalized
-                    descriptionUnavailableMessage = nil
-                }
-            } else {
-                descriptionUnavailableMessage = "Description is not readable text. Use the Description link above to open it."
-                descriptionText = nil
-            }
-        } catch {
-            descriptionUnavailableMessage = "Unable to load description. Use the Description link above to open it."
-            descriptionText = nil
-        }
-    }
-}
-
 private func formatDate(_ value: String) -> String? {
     let inFormatter = DateFormatter()
     inFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -387,12 +397,6 @@ private func formatDate(_ value: String) -> String? {
         return outFormatter.string(from: date)
     }
     return nil
-}
-
-private func mailtoURL(_ email: String) -> URL? {
-    let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
-    let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlUserAllowed) ?? trimmed
-    return URL(string: "mailto:\(encoded)")
 }
 
 private func mailtoURL(to: String?, cc: [String], subject: String?, body: String? = nil) -> URL? {
@@ -415,21 +419,10 @@ private func mailtoURL(to: String?, cc: [String], subject: String?, body: String
     return components.url
 }
 
-private func telURL(_ phone: String) -> URL? {
-    let digits = phone.filter { $0.isNumber }
-    guard !digits.isEmpty else { return nil }
-    return URL(string: "tel:\(digits)")
-}
-
 private func emailLinkLabel(for contacts: [Opportunity.Contact]) -> String? {
     let emails = contacts.compactMap { $0.email }
     if emails.isEmpty { return nil }
-    return emails.count == 1 ? "Email All Contacts" : "Email All Contacts (CC others)"
-}
-
-private func emailLinkLabel(for opportunity: Opportunity) -> String? {
-    guard let email = opportunity.contactEmail, !email.isEmpty else { return nil }
-    return "Email All Contacts"
+    return emails.count == 1 ? "Email Contact" : "Email All Contacts"
 }
 
 private func primaryEmail(from contacts: [Opportunity.Contact]) -> String? {
@@ -444,19 +437,11 @@ private func ccEmails(from contacts: [Opportunity.Contact]) -> [String] {
     return emails
 }
 
-private func normalizeDescription(_ text: String) -> String {
-    guard let data = text.data(using: .utf8) else { return text }
-    guard let json = try? JSONSerialization.jsonObject(with: data) else { return text }
-    let values = extractValues(from: json)
-    if values.isEmpty { return text }
-    return values.joined(separator: "\n")
-}
-
 private func emailBody(for opportunity: Opportunity) -> String {
     var lines: [String] = []
     lines.append("Hello,")
     lines.append("")
-    lines.append("I’m interested in the following opportunity:")
+    lines.append("I am interested in this opportunity:")
     lines.append("- Title: \(opportunity.title)")
     if let solicitation = opportunity.solicitationNumber {
         lines.append("- Solicitation: \(solicitation)")
@@ -468,27 +453,10 @@ private func emailBody(for opportunity: Opportunity) -> String {
         lines.append("- SAM.gov Link: \(uiLink)")
     }
     lines.append("")
-    lines.append("Could you please share any additional details or guidance on next steps?")
+    lines.append("Could you share any additional details and next steps?")
     lines.append("")
     lines.append("Thank you,")
     return lines.joined(separator: "\n")
-}
-
-private func extractValues(from json: Any) -> [String] {
-    if let dict = json as? [String: Any] {
-        return dict.keys.sorted().flatMap { extractValues(from: dict[$0] as Any) }
-    }
-    if let array = json as? [Any] {
-        return array.flatMap { extractValues(from: $0) }
-    }
-    if let string = json as? String {
-        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? [] : [trimmed]
-    }
-    if let number = json as? NSNumber {
-        return [number.stringValue]
-    }
-    return []
 }
 
 private struct CopyLinkButton: View {
@@ -501,33 +469,44 @@ private struct CopyLinkButton: View {
             UIPasteboard.general.string = url.absoluteString
             showCopied = true
         }
-        .font(DesignSystem.Typography.caption)
-        .foregroundStyle(DesignSystem.Colors.secondaryText)
+        .font(DesignTokensV2.Typography.caption)
+        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 #Preview {
-    // Provide a local mock with only the properties used by the view, to avoid mismatched initializers.
-    // If your real Opportunity type already has these properties, this initializer will compile.
     let sample = Opportunity(
         id: "1",
-        title: "Software Development Services",
-        agency: "Department of Example",
-        postedDate: "01/15/2026",
-        description: "This is a sample opportunity description.",
-        solicitationNumber: "ABC-123",
-        fullParentPathName: "Example Agency/Subdivision",
-        fullParentPathCode: "EA/SD",
-        office: "Office of Tech",
-        uiLink: "https://sam.gov",
-        additionalInfoLink: "https://example.com",
-        resourceLinks: ["https://example.com/file.pdf"],
-        responseDate: "02/01/2026",
-        setAsideCode: "SBA",
-        naicsCode: "541511",
-        naicsDescription: "Custom Computer Programming Services",
-        contacts: []
+        title: "Modern Air Combat Environment software/license",
+        agency: "DEPT OF DEFENSE",
+        postedDate: "03/01/2026",
+        description: "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=example",
+        solicitationNumber: "W911S226U2708",
+        fullParentPathName: "DEFENSE.DEPARTMENT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND",
+        fullParentPathCode: "ARMY.AMC.ACC.MICC.419TH",
+        office: "419TH CSB",
+        uiLink: "https://sam.gov/workspace/contract/opp/example/view",
+        additionalInfoLink: "https://sam.gov/example/info",
+        resourceLinks: ["https://sam.gov/example/very_long_attachment_name_for_wrapping_test.pdf"],
+        responseDate: "03/20/2026",
+        setAsideCode: "Total Small Business",
+        naicsCode: "541519",
+        naicsDescription: "Other Computer Related Services",
+        contacts: [
+            Opportunity.Contact(
+                id: "1",
+                type: "primary",
+                title: "Contracting Officer",
+                fullName: "Faryn Duff",
+                email: "faryn.p.duff.mil@army.mil",
+                phone: "912-328-2620",
+                fax: nil
+            )
+        ]
     )
 
-    OpportunityDetailView(opportunity: sample)
+    NavigationStack {
+        OpportunityDetailView(opportunity: sample)
+    }
 }

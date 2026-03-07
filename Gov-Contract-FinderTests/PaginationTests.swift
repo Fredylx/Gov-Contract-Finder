@@ -5,6 +5,7 @@
 //  Created by Fredy lopez on 2/12/26.
 //
 
+import Foundation
 import Testing
 @testable import Gov_Contract_Finder
 

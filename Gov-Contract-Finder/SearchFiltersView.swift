@@ -148,7 +148,7 @@ struct SearchFiltersView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if featureFlags.naicsPresetsEnabled {
-                    DisclosureGroup("NAICS Presets", isExpanded: $isNAICSPresetsExpanded) {
+                    DisclosureGroup {
                         VStack(alignment: .leading, spacing: 8) {
                             Button("NAICS 541511 – Custom Computer Programming") {
                                 viewModel.applyNAICSPreset(code: "541511", title: "custom software")
@@ -214,6 +214,13 @@ struct SearchFiltersView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.top, 4)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("NAICS Presets")
+                                .font(DesignSystem.Typography.body.weight(.semibold))
+                                .foregroundStyle(DesignSystem.Colors.accentNavy)
+                            Spacer()
+                        }
                     }
                 }
             }
@@ -229,10 +236,12 @@ struct SearchFiltersView: View {
                 .onChange(of: viewModel.sortOption) { _, _ in
                     viewModel.scheduleAutoSearch()
                 }
+                .font(DesignSystem.Typography.body.weight(.semibold))
+                .tint(DesignSystem.Colors.accentNavy)
                 .accessibilityLabel("Sort results")
             }
 
-            DisclosureGroup("Advanced filters") {
+            DisclosureGroup {
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.s) {
                     TextField("Notice Type", text: Binding(
                         get: { viewModel.noticeType ?? "" },
@@ -257,6 +266,13 @@ struct SearchFiltersView: View {
                     .accessibilityLabel("Set-aside code")
                 }
                 .padding(.top, 4)
+            } label: {
+                HStack(spacing: 6) {
+                    Text("Advanced Filters")
+                        .font(DesignSystem.Typography.body.weight(.semibold))
+                        .foregroundStyle(DesignSystem.Colors.accentNavy)
+                    Spacer()
+                }
             }
         }
         .cardStyle()

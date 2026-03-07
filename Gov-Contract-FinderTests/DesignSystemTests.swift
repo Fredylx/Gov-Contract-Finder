@@ -31,6 +31,12 @@ struct DesignSystemTests {
         #expect(approx(components.b, 51), "B component")
     }
 
+    @Test func themePreferenceMapsToColorScheme() {
+        #expect(ThemePreference.system.colorScheme == nil)
+        #expect(ThemePreference.light.colorScheme == .light)
+        #expect(ThemePreference.dark.colorScheme == .dark)
+    }
+
     private func rgba(from color: UIColor) -> (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat) {
         var r: CGFloat = 0
         var g: CGFloat = 0

@@ -1,41 +1,90 @@
-//
-//  Gov_Contract_FinderUITests.swift
-//  Gov-Contract-FinderUITests
-//
-//  Created by Fredy lopez on 1/31/26.
-//
-
 import XCTest
 
 final class Gov_Contract_FinderUITests: XCTestCase {
+    private let uiTestDetailLaunchArg = "-uiTest-openDetailFixture"
+    private let uiTestEnableV2Arg = "-uiTest-enableV2"
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testDetailScreenTextStaysWithinVisibleScreenWidth() throws {
         let app = XCUIApplication()
+        app.activate()
+        app.launchArguments.append(uiTestDetailLaunchArg)
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        XCTAssertTrue(app.otherElements["opportunity_detail_screen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.scrollViews["opportunity_detail_scroll"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["UI Test Opportunity"].waitForExistence(timeout: 5))
+
+        let scroll = app.scrollViews["opportunity_detail_scroll"]
+        for _ in 0..<6 {
+            assertVisibleTextFramesWithinWindowWidth(app: app, scroll: scroll)
+            scroll.swipeUp()
+        }
+
+        for _ in 0..<2 {
+            scroll.swipeDown()
+            assertVisibleTextFramesWithinWindowWidth(app: app, scroll: scroll)
+        }
     }
 
     @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+    func testV2ShellShowsAllTabs() throws {
+        let app = XCUIApplication()
+        app.activate()
+        app.launchArguments.append(uiTestEnableV2Arg)
+        app.launch()
+
+        XCTAssertTrue(app.buttons["Discover"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Watchlist"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Alerts"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Workspace"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 5))
+
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+    }
+
+    private func assertVisibleTextFramesWithinWindowWidth(
+        app: XCUIApplication,
+        scroll: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let window = app.windows.element(boundBy: 0)
+        XCTAssertTrue(window.exists, "App window should exist", file: file, line: line)
+        let windowFrame = window.frame.insetBy(dx: 1, dy: 0)
+
+        let visibleTexts = scroll
+            .descendants(matching: .staticText)
+            .allElementsBoundByIndex
+            .filter { element in
+                element.exists &&
+                element.isHittable &&
+                !element.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+
+        XCTAssertFalse(visibleTexts.isEmpty, "Expected visible text elements in detail screen", file: file, line: line)
+
+        for text in visibleTexts {
+            let frame = text.frame
+            XCTAssertGreaterThanOrEqual(
+                frame.minX,
+                windowFrame.minX,
+                "Text starts offscreen on the left: '\(text.label)' frame=\(NSCoder.string(for: frame))",
+                file: file,
+                line: line
+            )
+            XCTAssertLessThanOrEqual(
+                frame.maxX,
+                windowFrame.maxX,
+                "Text extends offscreen on the right: '\(text.label)' frame=\(NSCoder.string(for: frame))",
+                file: file,
+                line: line
+            )
         }
     }
 }

@@ -22,17 +22,19 @@ struct SearchView: View {
             ZStack(alignment: .topLeading) {
                 LuxuryBackground()
 
-                VStack(spacing: DesignSystem.Spacing.l) {
-                    header
-                    SearchFiltersView(viewModel: viewModel)
-                    statusSection
-                    resultsSection
+                ScrollView {
+                    VStack(spacing: DesignSystem.Spacing.l) {
+                        header
+                        SearchFiltersView(viewModel: viewModel)
+                        statusSection
+                        resultsSection
+                    }
+                    .frame(maxWidth: 360, alignment: .leading)
+                    .safeAreaPadding(.horizontal, 24)
+                    .safeAreaPadding(.top, 16)
+                    .safeAreaPadding(.bottom, 24)
+                    .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .frame(maxWidth: 360, alignment: .leading)
-                .safeAreaPadding(.horizontal, 24)
-                .safeAreaPadding(.top, 16)
-                .safeAreaPadding(.bottom, 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -59,20 +61,7 @@ struct SearchView: View {
             .sheet(isPresented: $isDebugPresented) {
                 DebugPanelView(settings: debugSettings)
             }
-            .overlay(alignment: .bottomTrailing) {
-                if featureFlags.darkModeToggleEnabled {
-                    Button {
-                        themeController.toggle()
-                    } label: {
-                        Image(systemName: themeController.colorScheme == .dark ? "sun.max.fill" : themeController.colorScheme == .light ? "circle.lefthalf.filled" : "moon.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .padding(12)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .padding()
-                }
-            }
-            .preferredColorScheme(featureFlags.darkModeToggleEnabled ? themeController.colorScheme : nil)
+            .preferredColorScheme(featureFlags.darkModeToggleEnabled ? themeController.preference.colorScheme : nil)
         }
     }
 
@@ -116,47 +105,44 @@ struct SearchView: View {
     }
 
     private var resultsList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(resultsSummary)
-                        .font(DesignSystem.Typography.caption)
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                    Spacer()
-                    Text(sortSummary)
-                        .font(DesignSystem.Typography.caption)
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                }
-
-                LazyVStack(spacing: 12) {
-                    ForEach(viewModel.opportunities) { opportunity in
-                        NavigationLink {
-                            OpportunityDetailView(opportunity: opportunity)
-                        } label: {
-                            OpportunityCardView(opportunity: opportunity)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if viewModel.canLoadMore {
-                        if viewModel.isLoadingMore {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 8)
-                        } else {
-                            Color.clear
-                                .frame(height: 1)
-                                .onAppear {
-                                    Task { await viewModel.loadMore() }
-                                }
-                        }
-                    }
-                }
-                .padding(.top, 4)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(resultsSummary)
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundStyle(DesignSystem.Colors.secondaryText)
+                Spacer()
+                Text(sortSummary)
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundStyle(DesignSystem.Colors.secondaryText)
             }
+
+            LazyVStack(spacing: 12) {
+                ForEach(viewModel.opportunities) { opportunity in
+                    NavigationLink {
+                        OpportunityDetailView(opportunity: opportunity)
+                    } label: {
+                        OpportunityCardView(opportunity: opportunity)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if viewModel.canLoadMore {
+                    if viewModel.isLoadingMore {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 8)
+                    } else {
+                        Color.clear
+                            .frame(height: 1)
+                            .onAppear {
+                                Task { await viewModel.loadMore() }
+                            }
+                    }
+                }
+            }
+            .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var emptyState: some View {
