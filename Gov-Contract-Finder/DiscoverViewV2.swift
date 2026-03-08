@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import OSLog
 
 @MainActor
 @Observable
@@ -61,6 +62,7 @@ final class DiscoverViewModelV2 {
     private let repository: OpportunityRepository
     private let pageSize = 25
     private let searchCooldown: TimeInterval = 0.8
+    private let logger = Logger(subsystem: "Gov-Contract-Finder", category: "DiscoverViewModelV2")
 
     private var lastSearchTapAt: Date = .distantPast
 
@@ -164,11 +166,14 @@ final class DiscoverViewModelV2 {
         guard canSubmitSearch else { return }
         hasSearched = true
         lastSearchTapAt = Date()
+        let start = Date()
+        debugLog("search start query=\"\(query.trimmedForDebug)\" offset=0 limit=\(pageSize) filters=\(debugFilterSummary)")
 
         if let validationError = validateSearchInputs() {
             errorMessage = validationError
             opportunities = []
             totalRecords = 0
+            debugLog("search validation failed message=\"\(validationError.trimmedForDebug)\"")
             return
         }
 
@@ -180,10 +185,14 @@ final class DiscoverViewModelV2 {
             let page = try await repository.search(filters: filters, limit: pageSize, offset: 0)
             opportunities = page.opportunities
             totalRecords = page.totalRecords
+            let elapsedMs = Int(Date().timeIntervalSince(start) * 1000)
+            debugLog("search success count=\(page.opportunities.count) total=\(page.totalRecords) elapsedMs=\(elapsedMs)")
         } catch {
             errorMessage = error.localizedDescription
             opportunities = []
             totalRecords = 0
+            let elapsedMs = Int(Date().timeIntervalSince(start) * 1000)
+            debugLog("search failed error=\"\(error.localizedDescription.trimmedForDebug)\" elapsedMs=\(elapsedMs)")
         }
     }
 
@@ -192,14 +201,21 @@ final class DiscoverViewModelV2 {
         guard opportunities.last?.id == currentID else { return }
 
         isLoadingMore = true
+        let offset = opportunities.count
+        let start = Date()
+        debugLog("loadMore start offset=\(offset) limit=\(pageSize)")
         defer { isLoadingMore = false }
 
         do {
-            let page = try await repository.search(filters: filters, limit: pageSize, offset: opportunities.count)
+            let page = try await repository.search(filters: filters, limit: pageSize, offset: offset)
             opportunities.append(contentsOf: page.opportunities)
             totalRecords = max(totalRecords, page.totalRecords)
+            let elapsedMs = Int(Date().timeIntervalSince(start) * 1000)
+            debugLog("loadMore success appended=\(page.opportunities.count) totalNow=\(opportunities.count) elapsedMs=\(elapsedMs)")
         } catch {
             errorMessage = error.localizedDescription
+            let elapsedMs = Int(Date().timeIntervalSince(start) * 1000)
+            debugLog("loadMore failed error=\"\(error.localizedDescription.trimmedForDebug)\" elapsedMs=\(elapsedMs)")
         }
     }
 
@@ -252,6 +268,25 @@ final class DiscoverViewModelV2 {
         formatter.dateFormat = "MM/dd/yyyy"
         return formatter.string(from: date)
     }
+
+    private var debugFilterSummary: String {
+        var pairs: [String] = []
+        if let agency = agency.nilIfEmpty { pairs.append("agency=\(agency.trimmedForDebug)") }
+        if let naics = naics.nilIfEmpty { pairs.append("naics=\(naics.trimmedForDebug)") }
+        if let from = postedFrom.nilIfEmpty { pairs.append("from=\(from)") }
+        if let to = postedTo.nilIfEmpty { pairs.append("to=\(to)") }
+        if let noticeType = noticeType.nilIfEmpty { pairs.append("notice=\(noticeType.trimmedForDebug)") }
+        if let setAsideCode = setAsideCode.nilIfEmpty { pairs.append("setAside=\(setAsideCode.trimmedForDebug)") }
+        pairs.append("sort=\(sortOption.sort)-\(sortOption.order)")
+        return pairs.joined(separator: ",")
+    }
+
+    private func debugLog(_ message: String) {
+        #if DEBUG
+        guard DebugSettings.shared.isEnabled else { return }
+        logger.debug("\(message, privacy: .public)")
+        #endif
+    }
 }
 
 struct DiscoverViewV2: View {
@@ -303,69 +338,60 @@ struct DiscoverViewV2: View {
 
     private var searchControlsCard: some View {
         NeoCard {
-            InputFieldV2(
-                title: "Search Keywords",
-                placeholder: "software, cloud, cybersecurity...",
-                text: $viewModel.query
-            )
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DesignTokensV2.Spacing.xs) {
-                    FilterChipV2(title: "Software", selected: false) {
+            VStack(spacing: DesignTokensV2.Spacing.s) {
+                HStack(spacing: DesignTokensV2.Spacing.s) {
+                    DiscoverPresetButton(
+                        title: "Software",
+                        icon: "laptopcomputer",
+                        startColor: DesignTokensV2.Colors.accentCyan,
+                        endColor: DesignTokensV2.Colors.accentViolet,
+                        selected: isSoftwarePresetSelected
+                    ) {
                         viewModel.applySoftwarePreset()
                     }
-                    FilterChipV2(title: "Small Cos", selected: false) {
+
+                    DiscoverPresetButton(
+                        title: "Small Cos",
+                        icon: "building.2",
+                        startColor: DesignTokensV2.Colors.accentMagenta,
+                        endColor: DesignTokensV2.Colors.accentLime,
+                        selected: isSmallCosPresetSelected
+                    ) {
                         viewModel.applySmallCompanyPreset()
                     }
-                    FilterChipV2(title: "Software + Small Cos", selected: false) {
-                        viewModel.applySoftwareSmallCompanyPreset()
-                    }
                 }
-            }
 
-            InputFieldV2(title: "Agency", placeholder: "Department of Defense", text: $viewModel.agency)
-            InputFieldV2(title: "NAICS Code", placeholder: "541519", text: $viewModel.naics, keyboardType: .numbersAndPunctuation)
-
-            HStack(spacing: DesignTokensV2.Spacing.s) {
-                InputFieldV2(title: "Posted From", placeholder: "MM/dd/yyyy", text: $viewModel.postedFrom)
-                InputFieldV2(title: "Posted To", placeholder: "MM/dd/yyyy", text: $viewModel.postedTo)
-            }
-
-            Button {
-                withAnimation(DesignTokensV2.Animation.quick) {
-                    viewModel.showAdvancedFilters.toggle()
+                DiscoverPresetButton(
+                    title: "Software + Small Business",
+                    icon: "bolt.fill",
+                    startColor: DesignTokensV2.Colors.accentViolet,
+                    endColor: DesignTokensV2.Colors.accentCyan,
+                    selected: isSoftwareSmallPresetSelected
+                ) {
+                    viewModel.applySoftwareSmallCompanyPreset()
                 }
-            } label: {
-                HStack(spacing: DesignTokensV2.Spacing.xs) {
-                    Image(systemName: "slider.horizontal.3")
-                    Text("Advanced Filters")
-                    Spacer()
-                    Image(systemName: viewModel.showAdvancedFilters ? "chevron.up" : "chevron.down")
-                }
-                .font(DesignTokensV2.Typography.bodyStrong)
-                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
-            }
-            .buttonStyle(.plain)
 
-            if viewModel.showAdvancedFilters {
-                VStack(spacing: DesignTokensV2.Spacing.s) {
-                    InputFieldV2(title: "Notice Type", placeholder: "Solicitation", text: $viewModel.noticeType)
-                    InputFieldV2(title: "Set-Aside", placeholder: "SBA", text: $viewModel.setAsideCode)
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+                HStack(spacing: DesignTokensV2.Spacing.s) {
+                    TextField("Search keywords...", text: $viewModel.query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .font(DesignTokensV2.Typography.body)
+                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
 
-            HStack {
-                Menu {
-                    ForEach(DiscoverViewModelV2.SortOption.allCases) { option in
-                        Button(option.title) {
-                            viewModel.sortOption = option
-                        }
-                    }
-                } label: {
-                    BadgeV2(text: viewModel.sortOption.title, color: DesignTokensV2.Colors.accentViolet)
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
                 }
-                Spacer()
+                .padding(.horizontal, DesignTokensV2.Spacing.m)
+                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(DesignTokensV2.Colors.bg800.opacity(0.8))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                )
             }
 
             Button {
@@ -386,16 +412,88 @@ struct DiscoverViewV2: View {
                 .padding(.vertical, DesignTokensV2.Spacing.s)
                 .background(
                     RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(viewModel.canSubmitSearch ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.textSecondary.opacity(0.35))
+                        .fill(
+                            viewModel.canSubmitSearch
+                            ? LinearGradient(
+                                colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            : LinearGradient(
+                                colors: [DesignTokensV2.Colors.textSecondary.opacity(0.35), DesignTokensV2.Colors.textSecondary.opacity(0.35)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                 )
                 .shadow(
                     color: viewModel.canSubmitSearch ? DesignTokensV2.Colors.accentCyan.opacity(0.25) : .clear,
-                    radius: 12
+                    radius: 14
                 )
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canSubmitSearch)
+
+            Button {
+                withAnimation(DesignTokensV2.Animation.quick) {
+                    viewModel.showAdvancedFilters.toggle()
+                }
+            } label: {
+                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    Image(systemName: "slider.horizontal.3")
+                    Text("Filters")
+                    Image(systemName: viewModel.showAdvancedFilters ? "chevron.up" : "chevron.down")
+                    Spacer()
+                }
+                .font(DesignTokensV2.Typography.bodyStrong)
+                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.showAdvancedFilters {
+                VStack(spacing: DesignTokensV2.Spacing.s) {
+                    InputFieldV2(title: "Agency", placeholder: "Department of Defense", text: $viewModel.agency)
+                    InputFieldV2(title: "NAICS Code", placeholder: "541519", text: $viewModel.naics, keyboardType: .numbersAndPunctuation)
+
+                    HStack(spacing: DesignTokensV2.Spacing.s) {
+                        InputFieldV2(title: "Posted From", placeholder: "MM/dd/yyyy", text: $viewModel.postedFrom)
+                        InputFieldV2(title: "Posted To", placeholder: "MM/dd/yyyy", text: $viewModel.postedTo)
+                    }
+
+                    InputFieldV2(title: "Notice Type", placeholder: "Solicitation", text: $viewModel.noticeType)
+                    InputFieldV2(title: "Set-Aside", placeholder: "SBA", text: $viewModel.setAsideCode)
+
+                    HStack {
+                        Menu {
+                            ForEach(DiscoverViewModelV2.SortOption.allCases) { option in
+                                Button(option.title) {
+                                    viewModel.sortOption = option
+                                }
+                            }
+                        } label: {
+                            BadgeV2(text: viewModel.sortOption.title, color: DesignTokensV2.Colors.accentViolet)
+                        }
+                        Spacer()
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
+    }
+
+    private var isSoftwarePresetSelected: Bool {
+        viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "software"
+        && viewModel.setAsideCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var isSmallCosPresetSelected: Bool {
+        viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "services"
+        && viewModel.setAsideCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "SBA"
+    }
+
+    private var isSoftwareSmallPresetSelected: Bool {
+        viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "software"
+        && viewModel.setAsideCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "SBA"
     }
 
     @ViewBuilder
@@ -442,10 +540,29 @@ struct DiscoverViewV2: View {
             }
         } else if !viewModel.hasSearched {
             NeoCard {
-                Text("Ready to search")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                BoundedBodyText(value: "Enter keywords or use a preset, then tap Search Opportunities.")
+                VStack(alignment: .center, spacing: DesignTokensV2.Spacing.s) {
+                    ZStack {
+                        Circle()
+                            .fill(DesignTokensV2.Colors.surface2)
+                            .frame(width: 56, height: 56)
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    }
+
+                    Text("Ready to Search")
+                        .font(DesignTokensV2.Typography.section)
+                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+                    Text(OpportunityDetailTextFormatter.wrapUnsafeTokens("Use quick presets above or search with custom filters to discover federal opportunities."))
+                        .font(DesignTokensV2.Typography.body)
+                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignTokensV2.Spacing.m)
             }
         } else if viewModel.opportunities.isEmpty {
             NeoCard {
@@ -534,6 +651,54 @@ struct DiscoverViewV2: View {
     }
 }
 
+private struct DiscoverPresetButton: View {
+    let title: String
+    let icon: String
+    let startColor: Color
+    let endColor: Color
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DesignTokensV2.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(title)
+                    .font(DesignTokensV2.Typography.bodyStrong)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, DesignTokensV2.Spacing.s)
+            .padding(.vertical, DesignTokensV2.Spacing.s)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                startColor.opacity(selected ? 0.5 : 0.3),
+                                endColor.opacity(selected ? 0.5 : 0.3)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                    .stroke((selected ? endColor : DesignTokensV2.Colors.border).opacity(0.85), lineWidth: 1)
+            )
+            .shadow(
+                color: selected ? endColor.opacity(0.25) : .clear,
+                radius: 10
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct OpportunityCardV2: View {
     let opportunity: Opportunity
     let isViewed: Bool
@@ -602,5 +767,11 @@ private extension String {
     var nilIfEmpty: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var trimmedForDebug: String {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.count <= 80 { return trimmed }
+        return String(trimmed.prefix(80)) + "…"
     }
 }

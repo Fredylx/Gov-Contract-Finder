@@ -61,18 +61,19 @@ final class SAMAPIClient {
         limit: Int = 25,
         offset: Int = 0
     ) async throws -> SAMResponse {
+        let requestID = String(UUID().uuidString.prefix(8))
         if DebugSettings.shared.isEnabled {
-            logger.debug("fetchOpportunities start query=\(query, privacy: .public) limit=\(limit)")
+            logger.debug("[\(requestID, privacy: .public)] opportunities start query=\(query, privacy: .public) offset=\(offset) limit=\(limit)")
         }
         if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             if DebugSettings.shared.isEnabled {
-                logger.error("fetchOpportunities invalid empty query")
+                logger.error("[\(requestID, privacy: .public)] opportunities validation failed empty query")
             }
             throw APIError.invalidQuery
         }
         guard let apiKey = APIKeyProvider.samKey() else {
             if DebugSettings.shared.isEnabled {
-                logger.error("fetchOpportunities missing API key")
+                logger.error("[\(requestID, privacy: .public)] opportunities missing API key")
             }
             throw APIError.missingAPIKey
         }
@@ -92,7 +93,7 @@ final class SAMAPIClient {
             offset: offset
         ) else {
             if DebugSettings.shared.isEnabled {
-                logger.error("fetchOpportunities failed to build URL")
+                logger.error("[\(requestID, privacy: .public)] opportunities failed to build URL")
             }
             throw URLError(.badURL)
         }
@@ -112,6 +113,7 @@ final class SAMAPIClient {
 
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             if DebugSettings.shared.isEnabled {
+                self.logger.error("[\(requestID, privacy: .public)] opportunities failed status=\(http.statusCode) elapsedMs=\(Int(elapsed * 1000))")
                 self.logger.error("fetchOpportunities bad status=\(http.statusCode) elapsed=\(elapsed, privacy: .public)")
                 self.logger.error("fetchOpportunities headers=\(self.headerSummary(http), privacy: .public)")
                 if let body = self.clippedBody(data) {
@@ -133,11 +135,14 @@ final class SAMAPIClient {
         do {
             let responseObj = try JSONDecoder().decode(SAMResponse.self, from: data)
             if DebugSettings.shared.isEnabled {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                self.logger.debug("[\(requestID, privacy: .public)] opportunities success status=\(statusCode) count=\(responseObj.opportunitiesData.count) total=\(responseObj.totalRecords ?? responseObj.opportunitiesData.count) elapsedMs=\(Int(elapsed * 1000))")
                 self.logger.debug("fetchOpportunities decoded count=\(responseObj.opportunitiesData.count)")
             }
             return responseObj
         } catch {
             if DebugSettings.shared.isEnabled {
+                self.logger.error("[\(requestID, privacy: .public)] opportunities decode failed elapsedMs=\(Int(elapsed * 1000)) error=\(error.localizedDescription, privacy: .public)")
                 self.logger.error("fetchOpportunities decode error=\(error.localizedDescription, privacy: .public)")
                 if let body = self.clippedBody(data) {
                     self.logger.error("fetchOpportunities decode body=\(body, privacy: .public)")

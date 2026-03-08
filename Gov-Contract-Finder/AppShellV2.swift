@@ -55,61 +55,59 @@ struct RootViewV2: View {
                 .opacity(0.06)
                 .ignoresSafeArea()
 
-            Group {
-                switch selectedTab {
-                case .discover:
-                    NavigationStack(path: $discoverPath) {
-                        DiscoverViewV2(
-                            watchlistStore: watchlistStore,
-                            alertsStore: alertsStore,
-                            workspaceStore: workspaceStore
-                        )
-                        .navigationDestination(for: AppRouteV2.self) { route in
-                            routeDestination(route)
-                        }
-                    }
-
-                case .watchlist:
-                    NavigationStack(path: $watchlistPath) {
-                        WatchlistViewV2(
-                            watchlistStore: watchlistStore,
-                            alertsStore: alertsStore,
-                            workspaceStore: workspaceStore
-                        )
-                        .navigationDestination(for: AppRouteV2.self) { route in
-                            routeDestination(route)
-                        }
-                    }
-
-                case .alerts:
-                    NavigationStack(path: $alertsPath) {
-                        AlertsViewV2(alertsStore: alertsStore)
-                            .navigationDestination(for: AppRouteV2.self) { route in
-                                routeDestination(route)
-                            }
-                    }
-
-                case .workspace:
-                    NavigationStack(path: $workspacePath) {
-                        WorkspaceViewV2(workspaceStore: workspaceStore)
-                            .navigationDestination(for: AppRouteV2.self) { route in
-                                routeDestination(route)
-                            }
-                    }
-
-                case .settings:
-                    NavigationStack(path: $settingsPath) {
-                        SettingsViewV2(
-                            themeController: themeController,
-                            watchlistStore: watchlistStore,
-                            alertsStore: alertsStore,
-                            workspaceStore: workspaceStore
-                        )
-                            .navigationDestination(for: AppRouteV2.self) { route in
-                                routeDestination(route)
-                            }
+            ZStack {
+                NavigationStack(path: $discoverPath) {
+                    DiscoverViewV2(
+                        watchlistStore: watchlistStore,
+                        alertsStore: alertsStore,
+                        workspaceStore: workspaceStore
+                    )
+                    .navigationDestination(for: AppRouteV2.self) { route in
+                        routeDestination(route)
                     }
                 }
+                .tabVisibility(isActive: selectedTab == .discover)
+
+                NavigationStack(path: $watchlistPath) {
+                    WatchlistViewV2(
+                        watchlistStore: watchlistStore,
+                        alertsStore: alertsStore,
+                        workspaceStore: workspaceStore
+                    )
+                    .navigationDestination(for: AppRouteV2.self) { route in
+                        routeDestination(route)
+                    }
+                }
+                .tabVisibility(isActive: selectedTab == .watchlist)
+
+                NavigationStack(path: $alertsPath) {
+                    AlertsViewV2(alertsStore: alertsStore)
+                        .navigationDestination(for: AppRouteV2.self) { route in
+                            routeDestination(route)
+                        }
+                }
+                .tabVisibility(isActive: selectedTab == .alerts)
+
+                NavigationStack(path: $workspacePath) {
+                    WorkspaceViewV2(workspaceStore: workspaceStore)
+                        .navigationDestination(for: AppRouteV2.self) { route in
+                            routeDestination(route)
+                        }
+                }
+                .tabVisibility(isActive: selectedTab == .workspace)
+
+                NavigationStack(path: $settingsPath) {
+                    SettingsViewV2(
+                        themeController: themeController,
+                        watchlistStore: watchlistStore,
+                        alertsStore: alertsStore,
+                        workspaceStore: workspaceStore
+                    )
+                        .navigationDestination(for: AppRouteV2.self) { route in
+                            routeDestination(route)
+                        }
+                }
+                .tabVisibility(isActive: selectedTab == .settings)
             }
 
             CustomTabBarV2(selectedTab: $selectedTab)
@@ -129,6 +127,17 @@ struct RootViewV2: View {
                 workspaceStore: workspaceStore
             )
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func tabVisibility(isActive: Bool) -> some View {
+        self
+            .opacity(isActive ? 1 : 0)
+            .allowsHitTesting(isActive)
+            .accessibilityHidden(!isActive)
+            .zIndex(isActive ? 1 : 0)
     }
 }
 
