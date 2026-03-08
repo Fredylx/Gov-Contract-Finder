@@ -50,6 +50,10 @@ struct RootViewV2: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             CyberpunkBackgroundV2()
+            Image("noiseTexture")
+                .resizable(resizingMode: .tile)
+                .opacity(0.06)
+                .ignoresSafeArea()
 
             Group {
                 switch selectedTab {
@@ -110,6 +114,7 @@ struct RootViewV2: View {
 
             CustomTabBarV2(selectedTab: $selectedTab)
         }
+        .dismissKeyboardOnTap()
         .preferredColorScheme(themeController.preferenceV2.colorScheme)
     }
 
@@ -157,20 +162,17 @@ struct CustomTabBarV2: View {
                         selectedTab = tab
                     }
                 } label: {
-                    VStack(spacing: 6) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 17, weight: .semibold))
-                        Text(tab.title)
-                            .font(DesignTokensV2.Typography.caption)
-                    }
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 18, weight: .semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .frame(height: 44)
                     .foregroundStyle(selectedTab == tab ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.textSecondary)
                     .background(
                         RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
                             .fill(selectedTab == tab ? DesignTokensV2.Colors.surface2 : .clear)
                     )
                 }
+                .accessibilityLabel(tab.title)
                 .buttonStyle(.plain)
             }
         }
@@ -183,7 +185,7 @@ struct CustomTabBarV2: View {
             RoundedRectangle(cornerRadius: DesignTokensV2.Radius.tabBar, style: .continuous)
                 .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
         )
-        .safeAreaPadding(.horizontal, DesignTokensV2.Spacing.l)
-        .safeAreaPadding(.bottom, DesignTokensV2.Spacing.s)
+        .padding(.horizontal, DesignTokensV2.Spacing.l)
+        .padding(.bottom, DesignTokensV2.Spacing.s)
     }
 }

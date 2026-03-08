@@ -3,10 +3,19 @@ import UIKit
 
 struct SafeEdgeScrollColumn<Content: View>: View {
     private let spacing: CGFloat
+    private let horizontalPadding: CGFloat
+    private let bottomPadding: CGFloat
     private let content: () -> Content
 
-    init(spacing: CGFloat = DesignTokensV2.Spacing.m, @ViewBuilder content: @escaping () -> Content) {
+    init(
+        spacing: CGFloat = DesignTokensV2.Spacing.m,
+        horizontalPadding: CGFloat = DesignTokensV2.Spacing.safeHorizontal,
+        bottomPadding: CGFloat = DesignTokensV2.Spacing.xxl + 70,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.spacing = spacing
+        self.horizontalPadding = horizontalPadding
+        self.bottomPadding = bottomPadding
         self.content = content
     }
 
@@ -16,9 +25,9 @@ struct SafeEdgeScrollColumn<Content: View>: View {
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .safeAreaPadding(.horizontal, DesignTokensV2.Spacing.safeHorizontal)
-            .safeAreaPadding(.top, DesignTokensV2.Spacing.m)
-            .safeAreaPadding(.bottom, DesignTokensV2.Spacing.xxl + 70)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.top, DesignTokensV2.Spacing.m)
+            .padding(.bottom, bottomPadding)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .scrollIndicators(.hidden)
@@ -36,6 +45,7 @@ struct BoundedBodyText: View {
             .foregroundStyle(color)
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
+            .allowsTightening(true)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .textSelection(.enabled)
@@ -91,6 +101,29 @@ struct NeonButton: View {
             .shadow(color: enabled ? DesignTokensV2.Colors.accentCyan.opacity(0.25) : .clear, radius: 12)
         }
         .disabled(!enabled)
+    }
+}
+
+struct NeonIconButton: View {
+    let systemImage: String
+    let accessibilityLabel: String
+    var selected: Bool = false
+    var role: ButtonRole? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: role, action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(selected ? DesignTokensV2.Colors.bg900 : DesignTokensV2.Colors.accentCyan)
+                .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(selected ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.surface2)
+                )
+        }
+        .accessibilityLabel(accessibilityLabel)
+        .buttonStyle(.plain)
     }
 }
 
@@ -190,5 +223,27 @@ struct ContactRowV2: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct KeyboardDismissOnTapModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
+                }
+            )
+    }
+}
+
+extension View {
+    func dismissKeyboardOnTap() -> some View {
+        modifier(KeyboardDismissOnTapModifier())
     }
 }

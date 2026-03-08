@@ -14,30 +14,55 @@ final class DiscoverViewModelV2 {
 
         var title: String {
             switch self {
-            case .postedNewest: return "Posted ↓"
-            case .postedOldest: return "Posted ↑"
-            case .titleAZ: return "Title A-Z"
-            case .titleZA: return "Title Z-A"
+            case .postedNewest: return "Posted Date (Newest)"
+            case .postedOldest: return "Posted Date (Oldest)"
+            case .titleAZ: return "Title (A-Z)"
+            case .titleZA: return "Title (Z-A)"
             }
         }
 
         var sort: String {
             switch self {
-            case .postedNewest, .postedOldest: return "postedDate"
-            case .titleAZ, .titleZA: return "title"
+            case .postedNewest, .postedOldest:
+                return "postedDate"
+            case .titleAZ, .titleZA:
+                return "title"
             }
         }
 
         var order: String {
             switch self {
-            case .postedNewest, .titleZA: return "desc"
-            case .postedOldest, .titleAZ: return "asc"
+            case .postedNewest, .titleZA:
+                return "desc"
+            case .postedOldest, .titleAZ:
+                return "asc"
             }
         }
     }
 
+    struct ActiveFilter: Identifiable {
+        enum Key: String, Hashable {
+            case query
+            case agency
+            case naics
+            case postedFrom
+            case postedTo
+            case noticeType
+            case setAsideCode
+        }
+
+        let key: Key
+        let label: String
+        let value: String
+
+        var id: String { key.rawValue }
+    }
+
     private let repository: OpportunityRepository
     private let pageSize = 25
+    private let searchCooldown: TimeInterval = 0.8
+
+    private var lastSearchTapAt: Date = .distantPast
 
     var query: String = ""
     var postedFrom: String = ""
@@ -48,10 +73,13 @@ final class DiscoverViewModelV2 {
     var setAsideCode: String = ""
     var sortOption: SortOption = .postedNewest
 
+    var showAdvancedFilters = false
+
     var opportunities: [Opportunity] = []
     var totalRecords: Int = 0
-    var isLoading: Bool = false
-    var isLoadingMore: Bool = false
+    var isLoading = false
+    var isLoadingMore = false
+    var hasSearched = false
     var errorMessage: String?
 
     init(repository: OpportunityRepository) {
@@ -63,6 +91,38 @@ final class DiscoverViewModelV2 {
         opportunities.count < totalRecords
     }
 
+    var canSubmitSearch: Bool {
+        !isLoading && !isLoadingMore && Date().timeIntervalSince(lastSearchTapAt) >= searchCooldown
+    }
+
+    var activeFilters: [ActiveFilter] {
+        var filters: [ActiveFilter] = []
+
+        if let value = query.nilIfEmpty {
+            filters.append(.init(key: .query, label: "Keyword", value: value))
+        }
+        if let value = agency.nilIfEmpty {
+            filters.append(.init(key: .agency, label: "Agency", value: value))
+        }
+        if let value = naics.nilIfEmpty {
+            filters.append(.init(key: .naics, label: "NAICS", value: value))
+        }
+        if let value = postedFrom.nilIfEmpty {
+            filters.append(.init(key: .postedFrom, label: "From", value: value))
+        }
+        if let value = postedTo.nilIfEmpty {
+            filters.append(.init(key: .postedTo, label: "To", value: value))
+        }
+        if let value = noticeType.nilIfEmpty {
+            filters.append(.init(key: .noticeType, label: "Notice", value: value))
+        }
+        if let value = setAsideCode.nilIfEmpty {
+            filters.append(.init(key: .setAsideCode, label: "Set-Aside", value: value))
+        }
+
+        return filters
+    }
+
     func applyLastSixMonthsPreset() {
         let now = Date()
         let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: now) ?? now
@@ -72,23 +132,43 @@ final class DiscoverViewModelV2 {
 
     func applySoftwarePreset() {
         query = "software"
-        naics = ""
+        setAsideCode = ""
         applyLastSixMonthsPreset()
     }
 
-    func applyNAICSPreset(_ code: String) {
-        naics = code
+    func applySmallCompanyPreset() {
+        query = "services"
+        setAsideCode = "SBA"
         applyLastSixMonthsPreset()
+    }
+
+    func applySoftwareSmallCompanyPreset() {
+        query = "software"
+        setAsideCode = "SBA"
+        applyLastSixMonthsPreset()
+    }
+
+    func clearFilter(_ key: ActiveFilter.Key) {
+        switch key {
+        case .query: query = ""
+        case .agency: agency = ""
+        case .naics: naics = ""
+        case .postedFrom: postedFrom = ""
+        case .postedTo: postedTo = ""
+        case .noticeType: noticeType = ""
+        case .setAsideCode: setAsideCode = ""
+        }
     }
 
     func search() async {
-        guard !postedFrom.isEmpty, !postedTo.isEmpty else {
-            errorMessage = "Posted From and Posted To are required."
-            return
-        }
+        guard canSubmitSearch else { return }
+        hasSearched = true
+        lastSearchTapAt = Date()
 
-        if !Self.isValidDate(postedFrom) || !Self.isValidDate(postedTo) {
-            errorMessage = "Date format must be MM/dd/yyyy."
+        if let validationError = validateSearchInputs() {
+            errorMessage = validationError
+            opportunities = []
+            totalRecords = 0
             return
         }
 
@@ -108,7 +188,7 @@ final class DiscoverViewModelV2 {
     }
 
     func loadMoreIfNeeded(currentID: String) async {
-        guard !isLoadingMore, canLoadMore else { return }
+        guard hasSearched, !isLoading, !isLoadingMore, canLoadMore else { return }
         guard opportunities.last?.id == currentID else { return }
 
         isLoadingMore = true
@@ -125,9 +205,9 @@ final class DiscoverViewModelV2 {
 
     private var filters: OpportunitySearchFiltersV2 {
         OpportunitySearchFiltersV2(
-            query: query,
-            postedFrom: postedFrom,
-            postedTo: postedTo,
+            query: query.trimmingCharacters(in: .whitespacesAndNewlines),
+            postedFrom: postedFrom.nilIfEmpty,
+            postedTo: postedTo.nilIfEmpty,
             naics: naics.nilIfEmpty,
             agency: agency.nilIfEmpty,
             noticeType: noticeType.nilIfEmpty,
@@ -135,6 +215,30 @@ final class DiscoverViewModelV2 {
             sort: sortOption.sort,
             order: sortOption.order
         )
+    }
+
+    private func validateSearchInputs() -> String? {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedQuery.isEmpty {
+            return "Search text cannot be empty."
+        }
+
+        let hasFrom = !postedFrom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasTo = !postedTo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        if hasFrom != hasTo {
+            return "Posted From and Posted To must both be provided."
+        }
+
+        if hasFrom && !Self.isValidDate(postedFrom) {
+            return "Posted From must use MM/dd/yyyy."
+        }
+
+        if hasTo && !Self.isValidDate(postedTo) {
+            return "Posted To must use MM/dd/yyyy."
+        }
+
+        return nil
     }
 
     private static func isValidDate(_ value: String) -> Bool {
@@ -151,7 +255,10 @@ final class DiscoverViewModelV2 {
 }
 
 struct DiscoverViewV2: View {
+    private static let viewedIDsStorageKey = "v2.discover.viewedOpportunityIDs"
+
     @State private var viewModel: DiscoverViewModelV2
+    @State private var viewedOpportunityIDs: Set<String>
 
     @Bindable var watchlistStore: WatchlistStore
     @Bindable var alertsStore: AlertsStore
@@ -164,6 +271,7 @@ struct DiscoverViewV2: View {
         workspaceStore: WorkspaceStore
     ) {
         _viewModel = State(initialValue: DiscoverViewModelV2(repository: repository))
+        _viewedOpportunityIDs = State(initialValue: Set(UserDefaults.standard.stringArray(forKey: Self.viewedIDsStorageKey) ?? []))
         self.watchlistStore = watchlistStore
         self.alertsStore = alertsStore
         self.workspaceStore = workspaceStore
@@ -172,38 +280,80 @@ struct DiscoverViewV2: View {
     var body: some View {
         SafeEdgeScrollColumn {
             header
-            filterSection
-            statusSection
+            searchControlsCard
+            activeFilterSection
             resultsSection
         }
         .background(CyberpunkBackgroundV2())
         .navigationTitle("Discover")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            guard viewModel.opportunities.isEmpty, !viewModel.isLoading else { return }
-            await viewModel.search()
-        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
-            Text("Gov Contract Finder V2")
+            Text("Discover")
                 .font(DesignTokensV2.Typography.hero)
                 .foregroundStyle(DesignTokensV2.Colors.textPrimary)
 
-            Text("Find and qualify federal opportunities faster.")
+            Text("Find federal opportunities for your team.")
                 .font(DesignTokensV2.Typography.body)
                 .foregroundStyle(DesignTokensV2.Colors.textSecondary)
         }
     }
 
-    private var filterSection: some View {
+    private var searchControlsCard: some View {
         NeoCard {
-            InputFieldV2(title: "Keyword", placeholder: "software, AI, cloud...", text: $viewModel.query)
-            InputFieldV2(title: "Posted From", placeholder: "MM/dd/yyyy", text: $viewModel.postedFrom)
-            InputFieldV2(title: "Posted To", placeholder: "MM/dd/yyyy", text: $viewModel.postedTo)
-            InputFieldV2(title: "NAICS", placeholder: "541519", text: $viewModel.naics, keyboardType: .numbersAndPunctuation)
-            InputFieldV2(title: "Agency", placeholder: "Department", text: $viewModel.agency)
+            InputFieldV2(
+                title: "Search Keywords",
+                placeholder: "software, cloud, cybersecurity...",
+                text: $viewModel.query
+            )
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    FilterChipV2(title: "Software", selected: false) {
+                        viewModel.applySoftwarePreset()
+                    }
+                    FilterChipV2(title: "Small Cos", selected: false) {
+                        viewModel.applySmallCompanyPreset()
+                    }
+                    FilterChipV2(title: "Software + Small Cos", selected: false) {
+                        viewModel.applySoftwareSmallCompanyPreset()
+                    }
+                }
+            }
+
+            InputFieldV2(title: "Agency", placeholder: "Department of Defense", text: $viewModel.agency)
+            InputFieldV2(title: "NAICS Code", placeholder: "541519", text: $viewModel.naics, keyboardType: .numbersAndPunctuation)
+
+            HStack(spacing: DesignTokensV2.Spacing.s) {
+                InputFieldV2(title: "Posted From", placeholder: "MM/dd/yyyy", text: $viewModel.postedFrom)
+                InputFieldV2(title: "Posted To", placeholder: "MM/dd/yyyy", text: $viewModel.postedTo)
+            }
+
+            Button {
+                withAnimation(DesignTokensV2.Animation.quick) {
+                    viewModel.showAdvancedFilters.toggle()
+                }
+            } label: {
+                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    Image(systemName: "slider.horizontal.3")
+                    Text("Advanced Filters")
+                    Spacer()
+                    Image(systemName: viewModel.showAdvancedFilters ? "chevron.up" : "chevron.down")
+                }
+                .font(DesignTokensV2.Typography.bodyStrong)
+                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.showAdvancedFilters {
+                VStack(spacing: DesignTokensV2.Spacing.s) {
+                    InputFieldV2(title: "Notice Type", placeholder: "Solicitation", text: $viewModel.noticeType)
+                    InputFieldV2(title: "Set-Aside", placeholder: "SBA", text: $viewModel.setAsideCode)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             HStack {
                 Menu {
@@ -218,52 +368,96 @@ struct DiscoverViewV2: View {
                 Spacer()
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
+            Button {
+                Task { await viewModel.search() }
+            } label: {
                 HStack(spacing: DesignTokensV2.Spacing.xs) {
-                    FilterChipV2(title: "Software Preset", selected: false) {
-                        viewModel.applySoftwarePreset()
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .tint(DesignTokensV2.Colors.bg900)
+                    } else {
+                        Image(systemName: "magnifyingglass")
                     }
-                    FilterChipV2(title: "NAICS 541519", selected: false) {
-                        viewModel.applyNAICSPreset("541519")
-                    }
-                    FilterChipV2(title: "NAICS 541511", selected: false) {
-                        viewModel.applyNAICSPreset("541511")
+                    Text(viewModel.isLoading ? "Searching..." : "Search Opportunities")
+                }
+                .font(DesignTokensV2.Typography.bodyStrong)
+                .foregroundStyle(DesignTokensV2.Colors.bg900)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(viewModel.canSubmitSearch ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.textSecondary.opacity(0.35))
+                )
+                .shadow(
+                    color: viewModel.canSubmitSearch ? DesignTokensV2.Colors.accentCyan.opacity(0.25) : .clear,
+                    radius: 12
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canSubmitSearch)
+        }
+    }
+
+    @ViewBuilder
+    private var activeFilterSection: some View {
+        if !viewModel.activeFilters.isEmpty {
+            NeoCard {
+                HStack {
+                    Text("Active Filters")
+                        .font(DesignTokensV2.Typography.caption)
+                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    Spacer()
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: DesignTokensV2.Spacing.xs) {
+                        ForEach(viewModel.activeFilters) { filter in
+                            RemovableFilterChipV2(
+                                label: filter.label,
+                                value: filter.value
+                            ) {
+                                viewModel.clearFilter(filter.key)
+                            }
+                        }
                     }
                 }
-            }
-
-            NeonButton(title: "Search", icon: "magnifyingglass", enabled: !viewModel.isLoading) {
-                Task { await viewModel.search() }
             }
         }
     }
 
     @ViewBuilder
-    private var statusSection: some View {
-        if let error = viewModel.errorMessage {
+    private var resultsSection: some View {
+        if viewModel.hasSearched, let error = viewModel.errorMessage {
             NeoCard {
-                Text("Error")
+                Text("Search Error")
                     .font(DesignTokensV2.Typography.section)
                     .foregroundStyle(DesignTokensV2.Colors.danger)
                 BoundedBodyText(value: error, color: DesignTokensV2.Colors.textPrimary)
             }
         } else if viewModel.isLoading {
             NeoCard {
-                ProgressView("Loading opportunities...")
+                ProgressView("Fetching opportunities...")
                     .tint(DesignTokensV2.Colors.accentCyan)
                     .foregroundStyle(DesignTokensV2.Colors.textSecondary)
             }
+        } else if !viewModel.hasSearched {
+            NeoCard {
+                Text("Ready to search")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                BoundedBodyText(value: "Enter keywords or use a preset, then tap Search Opportunities.")
+            }
+        } else if viewModel.opportunities.isEmpty {
+            NeoCard {
+                Text("No opportunities found")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                BoundedBodyText(value: "Try broadening your keywords or adjusting your filters.")
+            }
         } else {
-            EmptyView()
-        }
-    }
-
-    @ViewBuilder
-    private var resultsSection: some View {
-        if !viewModel.opportunities.isEmpty {
             HStack {
                 BoundedBodyText(
-                    value: "Showing \(viewModel.opportunities.count) of \(viewModel.totalRecords)",
+                    value: "\(viewModel.opportunities.count) opportunities shown",
                     font: DesignTokensV2.Typography.caption
                 )
                 Spacer()
@@ -271,31 +465,46 @@ struct DiscoverViewV2: View {
 
             LazyVStack(spacing: DesignTokensV2.Spacing.s) {
                 ForEach(viewModel.opportunities) { opportunity in
-                    NavigationLink {
-                        OpportunityDetailView(
-                            opportunity: opportunity,
-                            watchlistStore: watchlistStore,
-                            alertsStore: alertsStore,
-                            workspaceStore: workspaceStore
-                        )
-                    } label: {
-                        OpportunityCardV2(
-                            opportunity: opportunity,
-                            isSaved: watchlistStore.contains(opportunityID: opportunity.id),
-                            onSave: {
-                                watchlistStore.add(opportunity)
-                                alertsStore.addAlert(
-                                    type: .statusChange,
-                                    title: "Added to Watchlist",
-                                    message: opportunity.title,
-                                    opportunityID: opportunity.id
+                    ZStack(alignment: .topTrailing) {
+                        NavigationLink {
+                            OpportunityDetailView(
+                                opportunity: opportunity,
+                                watchlistStore: watchlistStore,
+                                alertsStore: alertsStore,
+                                workspaceStore: workspaceStore
+                            )
+                        } label: {
+                            OpportunityCardV2(
+                                opportunity: opportunity,
+                                isViewed: viewedOpportunityIDs.contains(opportunity.id)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .simultaneousGesture(TapGesture().onEnded {
+                            markViewed(opportunity.id)
+                        })
+                        .task {
+                            await viewModel.loadMoreIfNeeded(currentID: opportunity.id)
+                        }
+
+                        Button {
+                            toggleSaved(opportunity)
+                        } label: {
+                            Image(systemName: watchlistStore.contains(opportunityID: opportunity.id) ? "bookmark.fill" : "bookmark")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(
+                                    watchlistStore.contains(opportunityID: opportunity.id)
+                                    ? DesignTokensV2.Colors.accentLime
+                                    : DesignTokensV2.Colors.textSecondary
                                 )
-                            }
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .task {
-                        await viewModel.loadMoreIfNeeded(currentID: opportunity.id)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(DesignTokensV2.Colors.surface2.opacity(0.8))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(DesignTokensV2.Spacing.s)
                     }
                 }
 
@@ -305,57 +514,97 @@ struct DiscoverViewV2: View {
                         .padding(.top, DesignTokensV2.Spacing.s)
                 }
             }
-        } else if !viewModel.isLoading {
-            NeoCard {
-                Text("No opportunities yet")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                BoundedBodyText(value: "Run a search to load opportunities from SAM.gov.")
-            }
         }
+    }
+
+    private func toggleSaved(_ opportunity: Opportunity) {
+        if watchlistStore.contains(opportunityID: opportunity.id) {
+            watchlistStore.remove(opportunityID: opportunity.id)
+            alertsStore.addAlert(
+                type: .statusChange,
+                title: "Removed from Watchlist",
+                message: opportunity.title,
+                opportunityID: opportunity.id
+            )
+        } else {
+            watchlistStore.add(opportunity)
+            alertsStore.addAlert(
+                type: .statusChange,
+                title: "Added to Watchlist",
+                message: opportunity.title,
+                opportunityID: opportunity.id
+            )
+        }
+    }
+
+    private func markViewed(_ id: String) {
+        guard !viewedOpportunityIDs.contains(id) else { return }
+        viewedOpportunityIDs.insert(id)
+        UserDefaults.standard.set(Array(viewedOpportunityIDs), forKey: Self.viewedIDsStorageKey)
     }
 }
 
 private struct OpportunityCardV2: View {
     let opportunity: Opportunity
-    let isSaved: Bool
-    let onSave: () -> Void
+    let isViewed: Bool
 
     var body: some View {
         NeoCard {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
-                    BoundedBodyText(
-                        value: opportunity.title,
-                        font: DesignTokensV2.Typography.section,
-                        color: DesignTokensV2.Colors.textPrimary
-                    )
+            BoundedBodyText(
+                value: opportunity.title,
+                font: DesignTokensV2.Typography.section,
+                color: DesignTokensV2.Colors.textPrimary
+            )
 
-                    if let agency = opportunity.agency {
-                        BoundedBodyText(value: agency)
-                    }
+            if let agency = opportunity.agency {
+                BoundedBodyText(value: agency)
+            }
 
-                    HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        if let posted = opportunity.postedDate {
-                            BadgeV2(text: "Posted \(posted)", color: DesignTokensV2.Colors.accentCyan)
-                        }
-                        if let due = opportunity.responseDate {
-                            BadgeV2(text: "Due \(due)", color: DesignTokensV2.Colors.warning)
-                        }
-                    }
+            HStack(spacing: DesignTokensV2.Spacing.xs) {
+                if let posted = opportunity.postedDate {
+                    BadgeV2(text: "Posted \(posted)", color: DesignTokensV2.Colors.accentCyan)
                 }
-
-                Spacer(minLength: DesignTokensV2.Spacing.s)
-
-                Button {
-                    onSave()
-                } label: {
-                    Image(systemName: isSaved ? "bookmark.fill" : "bookmark")
-                        .foregroundStyle(isSaved ? DesignTokensV2.Colors.accentLime : DesignTokensV2.Colors.textSecondary)
+                if let due = opportunity.responseDate {
+                    BadgeV2(text: "Due \(due)", color: DesignTokensV2.Colors.warning)
                 }
-                .buttonStyle(.plain)
+                if isViewed {
+                    BadgeV2(text: "Viewed", color: DesignTokensV2.Colors.textSecondary)
+                }
             }
         }
+    }
+}
+
+private struct RemovableFilterChipV2: View {
+    let label: String
+    let value: String
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: DesignTokensV2.Spacing.xs) {
+            Text("\(label): \(value)")
+                .font(DesignTokensV2.Typography.caption)
+                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            Button {
+                onRemove()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, DesignTokensV2.Spacing.s)
+        .padding(.vertical, DesignTokensV2.Spacing.xs)
+        .background(
+            Capsule(style: .continuous)
+                .fill(DesignTokensV2.Colors.surface2)
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+        )
     }
 }
 

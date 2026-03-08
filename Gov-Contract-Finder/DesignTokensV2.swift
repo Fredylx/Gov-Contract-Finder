@@ -1,20 +1,21 @@
 import SwiftUI
+import UIKit
 
 enum DesignTokensV2 {
     enum Colors {
-        static let bg900 = Color(hex: "050816")
-        static let bg800 = Color(hex: "0B1026")
-        static let surface = Color(hex: "121A34")
-        static let surface2 = Color(hex: "182247")
-        static let textPrimary = Color(hex: "EAF2FF")
-        static let textSecondary = Color(hex: "9FB0D1")
-        static let accentCyan = Color(hex: "2DE2E6")
-        static let accentMagenta = Color(hex: "FF4FD8")
-        static let accentViolet = Color(hex: "8A7BFF")
-        static let accentLime = Color(hex: "B8FF5A")
-        static let warning = Color(hex: "FFB347")
-        static let danger = Color(hex: "FF5C7A")
-        static let success = Color(hex: "5CFFB1")
+        static let bg900 = dynamic(light: "#F3F7FF", dark: "#050816")
+        static let bg800 = dynamic(light: "#EAF1FF", dark: "#0B1026")
+        static let surface = dynamic(light: "#FFFFFF", dark: "#121A34")
+        static let surface2 = dynamic(light: "#EFF5FF", dark: "#182247")
+        static let textPrimary = dynamic(light: "#0C1533", dark: "#EAF2FF")
+        static let textSecondary = dynamic(light: "#4E5E87", dark: "#9FB0D1")
+        static let accentCyan = dynamic(light: "#008B94", dark: "#2DE2E6")
+        static let accentMagenta = dynamic(light: "#C438AA", dark: "#FF4FD8")
+        static let accentViolet = dynamic(light: "#5A58C7", dark: "#8A7BFF")
+        static let accentLime = dynamic(light: "#4F8F00", dark: "#B8FF5A")
+        static let warning = dynamic(light: "#BA6A00", dark: "#FFB347")
+        static let danger = dynamic(light: "#C33A57", dark: "#FF5C7A")
+        static let success = dynamic(light: "#128E5A", dark: "#5CFFB1")
         static let border = accentCyan.opacity(0.22)
     }
 
@@ -88,5 +89,26 @@ struct CyberpunkBackgroundV2: View {
             .opacity(0.9)
         }
         .ignoresSafeArea()
+    }
+}
+
+private extension DesignTokensV2.Colors {
+    static func dynamic(light: String, dark: String) -> Color {
+        let lightColor = uiColor(hex: light)
+        let darkColor = uiColor(hex: dark)
+        return Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? darkColor : lightColor
+        })
+    }
+
+    static func uiColor(hex: String) -> UIColor {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+
+        let r = CGFloat((int >> 16) & 0xFF) / 255
+        let g = CGFloat((int >> 8) & 0xFF) / 255
+        let b = CGFloat(int & 0xFF) / 255
+        return UIColor(red: r, green: g, blue: b, alpha: 1)
     }
 }
