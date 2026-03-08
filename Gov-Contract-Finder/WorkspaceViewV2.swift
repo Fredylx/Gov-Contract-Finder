@@ -11,6 +11,15 @@ private enum WorkspaceTabV2: String, CaseIterable, Identifiable {
     var title: String {
         rawValue.capitalized
     }
+
+    var icon: String {
+        switch self {
+        case .tasks: return "checkmark.square"
+        case .notes: return "note.text"
+        case .documents: return "paperclip"
+        case .activity: return "waveform.path.ecg"
+        }
+    }
 }
 
 struct WorkspaceViewV2: View {
@@ -19,17 +28,19 @@ struct WorkspaceViewV2: View {
     @State private var selectedRecordID: String?
     @State private var activeTab: WorkspaceTabV2 = .tasks
 
-    @State private var newTaskTitle: String = ""
-    @State private var newNoteTitle: String = ""
-    @State private var newNoteBody: String = ""
-    @State private var newDocName: String = ""
-    @State private var newDocURL: String = ""
+    @State private var newTaskTitle = ""
+    @State private var newNoteTitle = ""
+    @State private var newNoteBody = ""
+    @State private var newDocName = ""
+    @State private var newDocURL = ""
 
     var body: some View {
-        SafeEdgeScrollColumn {
+        SafeEdgeScrollColumn(maxContentWidth: 860) {
+            header
             recordsSection
 
             if let record = selectedRecord {
+                summaryCard(record: record)
                 tabPicker
                 tabContent(record: record)
             } else {
@@ -51,32 +62,69 @@ struct WorkspaceViewV2: View {
         }
     }
 
+    private var header: some View {
+        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+            Text("Workspace")
+                .font(DesignTokensV2.Typography.hero)
+                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            BoundedBodyText(value: "Track execution for each saved opportunity.")
+        }
+    }
+
     private var selectedRecord: WorkspaceRecord? {
         guard let selectedRecordID else { return nil }
         return workspaceStore.records.first(where: { $0.id == selectedRecordID })
     }
 
     private var recordsSection: some View {
-        NeoCard {
-            Text("Records")
-                .font(DesignTokensV2.Typography.section)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-
-            if workspaceStore.records.isEmpty {
-                BoundedBodyText(value: "No records yet.")
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        ForEach(workspaceStore.records) { record in
-                            FilterChipV2(
-                                title: record.opportunityTitle,
-                                selected: selectedRecordID == record.id
-                            ) {
-                                selectedRecordID = record.id
-                            }
-                        }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DesignTokensV2.Spacing.xs) {
+                ForEach(workspaceStore.records) { record in
+                    FilterChipV2(
+                        title: record.opportunityTitle,
+                        selected: selectedRecordID == record.id
+                    ) {
+                        selectedRecordID = record.id
                     }
                 }
+            }
+        }
+    }
+
+    private func summaryCard(record: WorkspaceRecord) -> some View {
+        let total = max(record.tasks.count, 1)
+        let completed = record.tasks.filter { $0.completed }.count
+        let progress = CGFloat(completed) / CGFloat(total)
+        let percent = Int(progress * 100)
+
+        return NeoCard {
+            BoundedBodyText(
+                value: record.opportunityTitle,
+                font: DesignTokensV2.Typography.title,
+                color: DesignTokensV2.Colors.textPrimary
+            )
+
+            BoundedBodyText(value: "Completion Progress")
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(DesignTokensV2.Colors.surface2)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(DesignTokensV2.Colors.accentCyan)
+                        .frame(width: max(14, proxy.size.width * progress))
+                }
+            }
+            .frame(height: 12)
+
+            HStack {
+                Text("\(completed)/\(record.tasks.count) tasks complete")
+                    .font(DesignTokensV2.Typography.caption)
+                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                Spacer()
+                Text("\(percent)%")
+                    .font(DesignTokensV2.Typography.caption)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
             }
         }
     }
@@ -84,11 +132,25 @@ struct WorkspaceViewV2: View {
     private var tabPicker: some View {
         HStack(spacing: DesignTokensV2.Spacing.xs) {
             ForEach(WorkspaceTabV2.allCases) { tab in
-                FilterChipV2(title: tab.title, selected: activeTab == tab) {
+                Button {
                     withAnimation(DesignTokensV2.Animation.quick) {
                         activeTab = tab
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: tab.icon)
+                        Text(tab.title)
+                    }
+                    .font(DesignTokensV2.Typography.caption)
+                    .foregroundStyle(activeTab == tab ? DesignTokensV2.Colors.bg900 : DesignTokensV2.Colors.textPrimary)
+                    .padding(.horizontal, DesignTokensV2.Spacing.s)
+                    .padding(.vertical, DesignTokensV2.Spacing.xs)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(activeTab == tab ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.surface2)
+                    )
                 }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -109,55 +171,65 @@ struct WorkspaceViewV2: View {
 
     private func tasksView(record: WorkspaceRecord) -> some View {
         NeoCard {
-            Text("Tasks")
-                .font(DesignTokensV2.Typography.section)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-
-            InputFieldV2(title: "New Task", placeholder: "Write capability draft", text: $newTaskTitle)
-
-            NeonButton(title: "Add Task", icon: "plus") {
-                let title = newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !title.isEmpty else { return }
-                var updated = record
-                updated.tasks.insert(
-                    WorkspaceTask(id: UUID().uuidString, title: title, completed: false, dueDate: nil),
-                    at: 0
-                )
-                updated.activity.insert(
-                    WorkspaceActivity(id: UUID().uuidString, text: "Task added: \(title)", createdAt: Date()),
-                    at: 0
-                )
-                updated.updatedAt = Date()
-                workspaceStore.upsert(updated)
-                newTaskTitle = ""
+            HStack {
+                Text("Tasks (\(record.tasks.count))")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                Spacer()
+                Button {
+                    addTask(record: record)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text("Add Task")
+                    }
+                    .font(DesignTokensV2.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokensV2.Colors.bg900)
+                    .padding(.horizontal, DesignTokensV2.Spacing.s)
+                    .padding(.vertical, DesignTokensV2.Spacing.xs)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(DesignTokensV2.Colors.accentCyan)
+                    )
+                }
+                .buttonStyle(.plain)
             }
 
-            ForEach(record.tasks) { task in
-                HStack {
-                    Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(task.completed ? DesignTokensV2.Colors.success : DesignTokensV2.Colors.textSecondary)
-                    BoundedBodyText(
-                        value: task.title,
-                        color: task.completed ? DesignTokensV2.Colors.textSecondary : DesignTokensV2.Colors.textPrimary
-                    )
-                    Spacer()
-                    Button(task.completed ? "Undo" : "Done") {
-                        var updated = record
-                        guard let index = updated.tasks.firstIndex(where: { $0.id == task.id }) else { return }
-                        updated.tasks[index].completed.toggle()
-                        updated.activity.insert(
-                            WorkspaceActivity(
-                                id: UUID().uuidString,
-                                text: "Task status changed: \(task.title)",
-                                createdAt: Date()
-                            ),
-                            at: 0
+            InputFieldV2(title: "Task Name", placeholder: "Review technical requirements", text: $newTaskTitle)
+
+            if record.tasks.isEmpty {
+                BoundedBodyText(value: "No tasks yet.")
+            } else {
+                ForEach(record.tasks) { task in
+                    HStack(spacing: DesignTokensV2.Spacing.s) {
+                        Button {
+                            toggleTask(record: record, task: task)
+                        } label: {
+                            Image(systemName: task.completed ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(task.completed ? DesignTokensV2.Colors.success : DesignTokensV2.Colors.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+
+                        BoundedBodyText(
+                            value: task.title,
+                            color: task.completed ? DesignTokensV2.Colors.textSecondary : DesignTokensV2.Colors.textPrimary
                         )
-                        updated.updatedAt = Date()
-                        workspaceStore.upsert(updated)
+
+                        Spacer()
+
+                        if let dueDate = task.dueDate {
+                            BoundedBodyText(value: shortDate(dueDate), font: DesignTokensV2.Typography.caption)
+                        }
                     }
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                    .padding(DesignTokensV2.Spacing.s)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            .stroke(DesignTokensV2.Colors.border.opacity(0.65), lineWidth: 1)
+                    )
                 }
             }
         }
@@ -173,27 +245,11 @@ struct WorkspaceViewV2: View {
             InputFieldV2(title: "Note Body", placeholder: "Write notes...", text: $newNoteBody)
 
             NeonButton(title: "Add Note", icon: "square.and.pencil") {
-                let title = newNoteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                let body = newNoteBody.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !title.isEmpty || !body.isEmpty else { return }
-
-                var updated = record
-                updated.notes.insert(
-                    WorkspaceNote(id: UUID().uuidString, title: title.ifEmpty("Untitled"), body: body, updatedAt: Date()),
-                    at: 0
-                )
-                updated.activity.insert(
-                    WorkspaceActivity(id: UUID().uuidString, text: "Note added: \(title.ifEmpty("Untitled"))", createdAt: Date()),
-                    at: 0
-                )
-                updated.updatedAt = Date()
-                workspaceStore.upsert(updated)
-                newNoteTitle = ""
-                newNoteBody = ""
+                addNote(record: record)
             }
 
             ForEach(record.notes) { note in
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
                     BoundedBodyText(
                         value: note.title,
                         font: DesignTokensV2.Typography.bodyStrong,
@@ -202,11 +258,13 @@ struct WorkspaceViewV2: View {
                     if !note.body.isEmpty {
                         BoundedBodyText(value: note.body)
                     }
-                    BoundedBodyText(
-                        value: RelativeDateTimeFormatter().localizedString(for: note.updatedAt, relativeTo: Date()),
-                        font: DesignTokensV2.Typography.caption
-                    )
+                    BoundedBodyText(value: relativeDate(note.updatedAt), font: DesignTokensV2.Typography.caption)
                 }
+                .padding(DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                )
             }
         }
     }
@@ -220,28 +278,12 @@ struct WorkspaceViewV2: View {
             InputFieldV2(title: "Document Name", placeholder: "Capability Statement", text: $newDocName)
             InputFieldV2(title: "Document URL", placeholder: "https://...", text: $newDocURL)
 
-            NeonButton(title: "Add Document", icon: "doc") {
-                let name = newDocName.trimmingCharacters(in: .whitespacesAndNewlines)
-                let url = newDocURL.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !name.isEmpty, !url.isEmpty else { return }
-
-                var updated = record
-                updated.documents.insert(
-                    WorkspaceDocument(id: UUID().uuidString, name: name, url: url, addedAt: Date()),
-                    at: 0
-                )
-                updated.activity.insert(
-                    WorkspaceActivity(id: UUID().uuidString, text: "Document added: \(name)", createdAt: Date()),
-                    at: 0
-                )
-                updated.updatedAt = Date()
-                workspaceStore.upsert(updated)
-                newDocName = ""
-                newDocURL = ""
+            NeonButton(title: "Add Document", icon: "paperclip") {
+                addDocument(record: record)
             }
 
             ForEach(record.documents) { document in
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
                     BoundedBodyText(
                         value: document.name,
                         font: DesignTokensV2.Typography.bodyStrong,
@@ -255,6 +297,11 @@ struct WorkspaceViewV2: View {
                         BoundedBodyText(value: document.url)
                     }
                 }
+                .padding(DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                )
             }
         }
     }
@@ -269,16 +316,85 @@ struct WorkspaceViewV2: View {
                 BoundedBodyText(value: "No activity yet.")
             } else {
                 ForEach(record.activity) { activity in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
                         BoundedBodyText(value: activity.text, color: DesignTokensV2.Colors.textPrimary)
-                        BoundedBodyText(
-                            value: RelativeDateTimeFormatter().localizedString(for: activity.createdAt, relativeTo: Date()),
-                            font: DesignTokensV2.Typography.caption
-                        )
+                        BoundedBodyText(value: relativeDate(activity.createdAt), font: DesignTokensV2.Typography.caption)
                     }
+                    .padding(DesignTokensV2.Spacing.s)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                    )
                 }
             }
         }
+    }
+
+    private func addTask(record: WorkspaceRecord) {
+        let title = newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines).ifEmpty("New Task")
+        var updated = record
+        updated.tasks.insert(
+            WorkspaceTask(id: UUID().uuidString, title: title, completed: false, dueDate: nil),
+            at: 0
+        )
+        updated.activity.insert(
+            WorkspaceActivity(id: UUID().uuidString, text: "Task added: \(title)", createdAt: Date()),
+            at: 0
+        )
+        updated.updatedAt = Date()
+        workspaceStore.upsert(updated)
+        newTaskTitle = ""
+    }
+
+    private func toggleTask(record: WorkspaceRecord, task: WorkspaceTask) {
+        var updated = record
+        guard let index = updated.tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        updated.tasks[index].completed.toggle()
+        updated.activity.insert(
+            WorkspaceActivity(id: UUID().uuidString, text: "Task status changed: \(task.title)", createdAt: Date()),
+            at: 0
+        )
+        updated.updatedAt = Date()
+        workspaceStore.upsert(updated)
+    }
+
+    private func addNote(record: WorkspaceRecord) {
+        let title = newNoteTitle.trimmingCharacters(in: .whitespacesAndNewlines).ifEmpty("Untitled")
+        let body = newNoteBody.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty || !body.isEmpty else { return }
+        var updated = record
+        updated.notes.insert(WorkspaceNote(id: UUID().uuidString, title: title, body: body, updatedAt: Date()), at: 0)
+        updated.activity.insert(WorkspaceActivity(id: UUID().uuidString, text: "Note added: \(title)", createdAt: Date()), at: 0)
+        updated.updatedAt = Date()
+        workspaceStore.upsert(updated)
+        newNoteTitle = ""
+        newNoteBody = ""
+    }
+
+    private func addDocument(record: WorkspaceRecord) {
+        let name = newDocName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let url = newDocURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, !url.isEmpty else { return }
+        var updated = record
+        updated.documents.insert(WorkspaceDocument(id: UUID().uuidString, name: name, url: url, addedAt: Date()), at: 0)
+        updated.activity.insert(WorkspaceActivity(id: UUID().uuidString, text: "Document added: \(name)", createdAt: Date()), at: 0)
+        updated.updatedAt = Date()
+        workspaceStore.upsert(updated)
+        newDocName = ""
+        newDocURL = ""
+    }
+
+    private func relativeDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func shortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
     }
 }
 

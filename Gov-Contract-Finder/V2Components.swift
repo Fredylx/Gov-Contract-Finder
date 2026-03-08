@@ -5,17 +5,20 @@ struct SafeEdgeScrollColumn<Content: View>: View {
     private let spacing: CGFloat
     private let horizontalPadding: CGFloat
     private let bottomPadding: CGFloat
+    private let maxContentWidth: CGFloat
     private let content: () -> Content
 
     init(
         spacing: CGFloat = DesignTokensV2.Spacing.m,
         horizontalPadding: CGFloat = DesignTokensV2.Spacing.safeHorizontal,
         bottomPadding: CGFloat = DesignTokensV2.Spacing.xxl + 70,
+        maxContentWidth: CGFloat = 760,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.spacing = spacing
         self.horizontalPadding = horizontalPadding
         self.bottomPadding = bottomPadding
+        self.maxContentWidth = maxContentWidth
         self.content = content
     }
 
@@ -24,7 +27,8 @@ struct SafeEdgeScrollColumn<Content: View>: View {
             VStack(alignment: .leading, spacing: spacing) {
                 content()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: maxContentWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal, horizontalPadding)
             .padding(.top, DesignTokensV2.Spacing.m)
             .padding(.bottom, bottomPadding)
@@ -67,12 +71,13 @@ struct NeoCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .fill(DesignTokensV2.Colors.surface.opacity(0.95))
+                .fill(DesignTokensV2.Colors.surface.opacity(0.9))
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
                 .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
         )
+        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.12), radius: 12, y: 4)
     }
 }
 

@@ -4,13 +4,87 @@ struct AlertsViewV2: View {
     @Bindable var alertsStore: AlertsStore
 
     var body: some View {
-        SafeEdgeScrollColumn {
-            rulesSection
+        SafeEdgeScrollColumn(maxContentWidth: 840) {
+            header
             feedSection
+            rulesSection
         }
         .background(CyberpunkBackgroundV2())
         .navigationTitle("Alerts")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+            HStack {
+                Text("Alerts")
+                    .font(DesignTokensV2.Typography.hero)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                Spacer()
+                if alertsStore.unreadCount > 0 {
+                    Button("Mark all read") {
+                        alertsStore.markAllRead()
+                    }
+                    .font(DesignTokensV2.Typography.caption)
+                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                }
+            }
+
+            BoundedBodyText(value: "\(alertsStore.unreadCount) unread notifications")
+        }
+    }
+
+    @ViewBuilder
+    private var feedSection: some View {
+        if alertsStore.items.isEmpty {
+            NeoCard {
+                Text("No alerts yet")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                BoundedBodyText(value: "Enable rules and run Discover searches to populate this feed.")
+            }
+        } else {
+            ForEach(alertsStore.items) { alert in
+                NeoCard {
+                    HStack(alignment: .top, spacing: DesignTokensV2.Spacing.xs) {
+                        Image(systemName: icon(for: alert.type))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(color(for: alert.type))
+                            .frame(width: 20)
+
+                        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+                            BoundedBodyText(
+                                value: alert.title,
+                                font: DesignTokensV2.Typography.bodyStrong,
+                                color: alert.isRead ? DesignTokensV2.Colors.textSecondary : DesignTokensV2.Colors.textPrimary
+                            )
+                            BoundedBodyText(value: alert.message)
+                        }
+                        Spacer()
+
+                        BoundedBodyText(value: relativeDate(alert.createdAt), font: DesignTokensV2.Typography.caption)
+                    }
+
+                    HStack(spacing: DesignTokensV2.Spacing.xs) {
+                        AlertActionPill(
+                            title: alert.isRead ? "Mark Unread" : "Mark Read",
+                            tint: DesignTokensV2.Colors.success
+                        ) {
+                            alertsStore.markRead(alert.id, isRead: !alert.isRead)
+                        }
+
+                        AlertActionPill(
+                            title: "Dismiss",
+                            tint: DesignTokensV2.Colors.danger
+                        ) {
+                            alertsStore.delete(alert.id)
+                        }
+
+                        Spacer()
+                    }
+                }
+            }
+        }
     }
 
     private var rulesSection: some View {
@@ -19,104 +93,101 @@ struct AlertsViewV2: View {
                 Text("Alert Rules")
                     .font(DesignTokensV2.Typography.section)
                     .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
                 Spacer()
-                BadgeV2(text: "\(alertsStore.unreadCount) unread", color: DesignTokensV2.Colors.accentCyan)
+
+                Button {
+                    addRule()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text("New Rule")
+                    }
+                    .font(DesignTokensV2.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokensV2.Colors.bg900)
+                    .padding(.horizontal, DesignTokensV2.Spacing.s)
+                    .padding(.vertical, DesignTokensV2.Spacing.xs)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(DesignTokensV2.Colors.accentCyan)
+                    )
+                }
+                .buttonStyle(.plain)
             }
 
             ForEach(alertsStore.rules) { rule in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+                    HStack {
                         BoundedBodyText(
-                            value: rule.type.title,
+                            value: ruleTitle(for: rule),
                             font: DesignTokensV2.Typography.bodyStrong,
                             color: DesignTokensV2.Colors.textPrimary
                         )
-                        if !rule.keyword.isEmpty {
-                            BoundedBodyText(value: "Keyword: \(rule.keyword)")
+
+                        Spacer()
+
+                        BadgeV2(
+                            text: rule.enabled ? "Active" : "Paused",
+                            color: rule.enabled ? DesignTokensV2.Colors.success : DesignTokensV2.Colors.textSecondary
+                        )
+                    }
+
+                    HStack(spacing: DesignTokensV2.Spacing.xs) {
+                        BadgeV2(text: rule.type.title.lowercased(), color: DesignTokensV2.Colors.accentCyan)
+                        if !rule.keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            BadgeV2(text: rule.keyword.lowercased(), color: DesignTokensV2.Colors.accentViolet)
                         }
                     }
 
-                    Spacer()
+                    HStack(spacing: DesignTokensV2.Spacing.xs) {
+                        AlertActionPill(
+                            title: rule.enabled ? "Pause" : "Activate",
+                            tint: rule.enabled ? DesignTokensV2.Colors.warning : DesignTokensV2.Colors.success
+                        ) {
+                            alertsStore.setRuleEnabled(id: rule.id, enabled: !rule.enabled)
+                        }
 
-                    Toggle("", isOn: Binding(
-                        get: { rule.enabled },
-                        set: { alertsStore.setRuleEnabled(id: rule.id, enabled: $0) }
-                    ))
-                    .labelsHidden()
-                    .tint(DesignTokensV2.Colors.accentCyan)
+                        AlertActionPill(title: "Delete", tint: DesignTokensV2.Colors.danger) {
+                            alertsStore.rules.removeAll { $0.id == rule.id }
+                        }
+
+                        Spacer()
+                    }
                 }
-            }
-
-            HStack {
-                Button("Simulate New Opportunity") {
-                    alertsStore.addAlert(
-                        type: .newOpportunity,
-                        title: "Fresh Match",
-                        message: "A new software opportunity matched your filters.")
-                }
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
-
-                Spacer()
-
-                Button("Mark All Read") {
-                    alertsStore.markAllRead()
-                }
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                .padding(DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(DesignTokensV2.Colors.surface2.opacity(0.55))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .stroke(DesignTokensV2.Colors.border.opacity(0.7), lineWidth: 1)
+                )
             }
         }
     }
 
-    private var feedSection: some View {
-        Group {
-            if alertsStore.items.isEmpty {
-                NeoCard {
-                    Text("No alerts yet")
-                        .font(DesignTokensV2.Typography.section)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                    BoundedBodyText(value: "Enable rules and run Discover searches to populate this feed.")
-                }
-            } else {
-                ForEach(alertsStore.items) { alert in
-                    NeoCard {
-                        HStack(alignment: .top) {
-                            Circle()
-                                .fill(color(for: alert.type))
-                                .frame(width: 10, height: 10)
-                                .opacity(alert.isRead ? 0.45 : 1)
+    private func addRule() {
+        let sequence = AlertType.allCases
+        let nextType = sequence[alertsStore.rules.count % sequence.count]
+        let rule = AlertRule(
+            id: UUID().uuidString,
+            type: nextType,
+            enabled: true,
+            keyword: nextType == .newOpportunity ? "software" : "",
+            createdAt: Date()
+        )
+        alertsStore.rules.insert(rule, at: 0)
+    }
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                BoundedBodyText(
-                                    value: alert.title,
-                                    font: DesignTokensV2.Typography.bodyStrong,
-                                    color: alert.isRead ? DesignTokensV2.Colors.textSecondary : DesignTokensV2.Colors.textPrimary
-                                )
-                                BoundedBodyText(value: alert.message)
-                                BoundedBodyText(value: relativeDate(alert.createdAt), font: DesignTokensV2.Typography.caption)
-                            }
-
-                            Spacer()
-                        }
-
-                        HStack {
-                            Button(alert.isRead ? "Mark Unread" : "Mark Read") {
-                                alertsStore.markRead(alert.id, isRead: !alert.isRead)
-                            }
-                            .font(DesignTokensV2.Typography.caption)
-                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
-
-                            Spacer()
-
-                            Button("Delete") {
-                                alertsStore.delete(alert.id)
-                            }
-                            .font(DesignTokensV2.Typography.caption)
-                            .foregroundStyle(DesignTokensV2.Colors.danger)
-                        }
-                    }
-                }
-            }
+    private func ruleTitle(for rule: AlertRule) -> String {
+        switch rule.type {
+        case .newOpportunity:
+            return "Cloud & Cybersecurity"
+        case .deadline:
+            return "DOD Opportunities"
+        case .statusChange:
+            return "Data Analytics"
         }
     }
 
@@ -128,9 +199,42 @@ struct AlertsViewV2: View {
         }
     }
 
+    private func icon(for type: AlertType) -> String {
+        switch type {
+        case .newOpportunity: return "plus"
+        case .deadline: return "clock"
+        case .statusChange: return "bell"
+        }
+    }
+
     private func relativeDate(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+private struct AlertActionPill: View {
+    let title: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(DesignTokensV2.Typography.caption)
+                .foregroundStyle(tint)
+                .padding(.horizontal, DesignTokensV2.Spacing.s)
+                .padding(.vertical, DesignTokensV2.Spacing.xs)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(tint.opacity(0.15))
+                )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(tint.opacity(0.45), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
