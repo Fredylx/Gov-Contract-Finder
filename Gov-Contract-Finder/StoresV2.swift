@@ -40,6 +40,17 @@ final class WatchlistStore {
         items.insert(item, at: 0)
     }
 
+    @discardableResult
+    func toggle(_ opportunity: Opportunity) -> Bool {
+        if contains(opportunityID: opportunity.id) {
+            remove(opportunityID: opportunity.id)
+            return false
+        } else {
+            add(opportunity)
+            return true
+        }
+    }
+
     func remove(opportunityID: String) {
         items.removeAll { $0.opportunityID == opportunityID }
     }

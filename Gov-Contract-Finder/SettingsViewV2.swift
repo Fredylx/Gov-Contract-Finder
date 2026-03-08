@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SettingsViewV2: View {
+    private let supportIssuesURL = URL(string: "https://github.com/fredylopez/Gov-Contract-Finder/issues")
+    private let supportEmail = "support@codebodydynamics.com"
+
     @Bindable var themeController: ThemeController
     @Bindable var watchlistStore: WatchlistStore
     @Bindable var alertsStore: AlertsStore
@@ -12,6 +15,7 @@ struct SettingsViewV2: View {
         SafeEdgeScrollColumn {
             appearanceSection
             apiSection
+            supportSection
             storageSection
             debugSection
         }
@@ -83,6 +87,33 @@ struct SettingsViewV2: View {
             }
             .font(DesignTokensV2.Typography.bodyStrong)
             .foregroundStyle(DesignTokensV2.Colors.danger)
+        }
+    }
+
+    @ViewBuilder
+    private var supportSection: some View {
+        NeoCard {
+            Text("Support")
+                .font(DesignTokensV2.Typography.section)
+                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            BoundedBodyText(value: "Need help with the app or found a bug? Use one of the support channels below.")
+
+            if let supportIssuesURL {
+                Link(destination: supportIssuesURL) {
+                    Label("Open GitHub Support Page", systemImage: "link")
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                }
+            }
+
+            if let emailURL = URL(string: "mailto:\(supportEmail)") {
+                Link(destination: emailURL) {
+                    Label("Email \(supportEmail)", systemImage: "envelope")
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                }
+            }
         }
     }
 

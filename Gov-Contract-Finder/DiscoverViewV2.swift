@@ -518,23 +518,13 @@ struct DiscoverViewV2: View {
     }
 
     private func toggleSaved(_ opportunity: Opportunity) {
-        if watchlistStore.contains(opportunityID: opportunity.id) {
-            watchlistStore.remove(opportunityID: opportunity.id)
-            alertsStore.addAlert(
-                type: .statusChange,
-                title: "Removed from Watchlist",
-                message: opportunity.title,
-                opportunityID: opportunity.id
-            )
-        } else {
-            watchlistStore.add(opportunity)
-            alertsStore.addAlert(
-                type: .statusChange,
-                title: "Added to Watchlist",
-                message: opportunity.title,
-                opportunityID: opportunity.id
-            )
-        }
+        let isNowSaved = watchlistStore.toggle(opportunity)
+        alertsStore.addAlert(
+            type: .statusChange,
+            title: isNowSaved ? "Added to Watchlist" : "Removed from Watchlist",
+            message: opportunity.title,
+            opportunityID: opportunity.id
+        )
     }
 
     private func markViewed(_ id: String) {
