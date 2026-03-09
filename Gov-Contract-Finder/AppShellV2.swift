@@ -46,6 +46,8 @@ struct RootViewV2: View {
     @State private var alertsStore = AlertsStore()
     @State private var workspaceStore = WorkspaceStore()
     @State private var themeController = ThemeController()
+    @State private var tipJarStore = TipJarStore()
+    @State private var adConsentManager = AdConsentManager.shared
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -101,7 +103,9 @@ struct RootViewV2: View {
                         themeController: themeController,
                         watchlistStore: watchlistStore,
                         alertsStore: alertsStore,
-                        workspaceStore: workspaceStore
+                        workspaceStore: workspaceStore,
+                        tipJarStore: tipJarStore,
+                        adConsentManager: adConsentManager
                     )
                         .navigationDestination(for: AppRouteV2.self) { route in
                             routeDestination(route)
@@ -114,6 +118,10 @@ struct RootViewV2: View {
         }
         .dismissKeyboardOnTap()
         .preferredColorScheme(themeController.preferenceV2.colorScheme)
+        .task {
+            await tipJarStore.startIfNeeded()
+            await adConsentManager.prepareOnLaunch()
+        }
     }
 
     @ViewBuilder
@@ -170,6 +178,7 @@ struct CustomTabBarV2: View {
                     withAnimation(DesignTokensV2.Animation.smooth) {
                         selectedTab = tab
                     }
+                    SearchAdsCoordinator.shared.triggerAfterUserAction("tab_\(tab.title.lowercased())")
                 } label: {
                     Image(systemName: tab.icon)
                         .font(.system(size: 18, weight: .semibold))

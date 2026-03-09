@@ -10,13 +10,20 @@ struct GovContractFinderApp: App {
             let arguments = ProcessInfo.processInfo.arguments
             let _ = configureFeatureFlagsIfNeeded(arguments: arguments)
 
-            if arguments.contains(uiTestDetailLaunchArg) {
-                NavigationStack {
-                    OpportunityDetailView(opportunity: .uiTestDetailFixture)
-                        .accessibilityIdentifier("opportunity_detail_screen")
+            Group {
+                if arguments.contains(uiTestDetailLaunchArg) {
+                    NavigationStack {
+                        OpportunityDetailView(opportunity: .uiTestDetailFixture)
+                            .accessibilityIdentifier("opportunity_detail_screen")
+                    }
+                } else {
+                    RootView()
                 }
-            } else {
-                RootView()
+            }
+            .task {
+                AppConfigValidator.validateAtLaunch()
+                await AdConsentManager.shared.prepareOnLaunch()
+                SearchAdsCoordinator.shared.configureOnLaunchIfNeeded()
             }
         }
     }

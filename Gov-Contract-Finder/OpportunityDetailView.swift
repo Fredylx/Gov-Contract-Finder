@@ -70,6 +70,15 @@ struct OpportunityDetailView: View {
                 color: DesignTokensV2.Colors.textPrimary
             )
 
+            if let agency = opportunity.agency, !agency.isEmpty {
+                Label {
+                    BoundedBodyText(value: agency, font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textSecondary)
+                } icon: {
+                    Image(systemName: "building.2")
+                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                }
+            }
+
             HStack(spacing: DesignTokensV2.Spacing.xs) {
                 if let solicitationNumber = opportunity.solicitationNumber, !solicitationNumber.isEmpty {
                     BadgeV2(text: "Solicitation \(solicitationNumber)", color: DesignTokensV2.Colors.accentViolet)
@@ -77,6 +86,10 @@ struct OpportunityDetailView: View {
                 if let responseDate = opportunity.responseDate, !responseDate.isEmpty {
                     BadgeV2(text: "Due \(responseDate)", color: DesignTokensV2.Colors.warning)
                 }
+            }
+
+            if !opportunity.contacts.isEmpty {
+                contactActions
             }
 
             HStack(spacing: DesignTokensV2.Spacing.s) {
@@ -99,6 +112,7 @@ struct OpportunityDetailView: View {
                         message: opportunity.title,
                         opportunityID: opportunity.id
                     )
+                    SearchAdsCoordinator.shared.triggerAfterUserAction("detail_open_workspace")
                 }
 
                 if let uiLink = opportunity.uiLink, let url = URL(string: uiLink) {
@@ -160,7 +174,6 @@ struct OpportunityDetailView: View {
             sectionHeader("Contacts")
 
             if !opportunity.contacts.isEmpty {
-                contactActions
                 ForEach(opportunity.contacts) { contact in
                     ContactRowV2(contact: contact)
                 }
@@ -183,13 +196,19 @@ struct OpportunityDetailView: View {
             ) {
                 Link(destination: emailAllURL) {
                     Label("Email All", systemImage: "envelope")
-                        .font(DesignTokensV2.Typography.caption)
-                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
-                        .padding(.horizontal, DesignTokensV2.Spacing.s)
-                        .padding(.vertical, DesignTokensV2.Spacing.xs)
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.bg900)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DesignTokensV2.Spacing.s)
                         .background(
-                            Capsule(style: .continuous)
-                                .fill(DesignTokensV2.Colors.surface2)
+                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                         )
                 }
                 .buttonStyle(.plain)
@@ -199,19 +218,21 @@ struct OpportunityDetailView: View {
                let telURL = URL(string: "tel://\(phone.filter(\.isNumber))") {
                 Link(destination: telURL) {
                     Label("Call", systemImage: "phone")
-                        .font(DesignTokensV2.Typography.caption)
+                        .font(DesignTokensV2.Typography.bodyStrong)
                         .foregroundStyle(DesignTokensV2.Colors.accentCyan)
-                        .padding(.horizontal, DesignTokensV2.Spacing.s)
-                        .padding(.vertical, DesignTokensV2.Spacing.xs)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DesignTokensV2.Spacing.s)
                         .background(
-                            Capsule(style: .continuous)
+                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
                                 .fill(DesignTokensV2.Colors.surface2)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                .stroke(DesignTokensV2.Colors.accentCyan.opacity(0.55), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
             }
-
-            Spacer()
         }
     }
 
@@ -282,14 +303,41 @@ struct OpportunityDetailView: View {
 
                 ForEach(resourceLinks, id: \.self) { link in
                     if let url = buildURL(link, apiKey: apiKey) {
-                        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
+                        VStack(spacing: DesignTokensV2.Spacing.xs) {
                             Link(destination: url) {
-                                BoundedBodyText(
-                                    value: linkLabel(for: url),
-                                    color: DesignTokensV2.Colors.accentCyan
+                                HStack(spacing: DesignTokensV2.Spacing.s) {
+                                    Image(systemName: "doc.text")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        BoundedBodyText(
+                                            value: linkLabel(for: url),
+                                            font: DesignTokensV2.Typography.bodyStrong,
+                                            color: DesignTokensV2.Colors.textPrimary
+                                        )
+                                        BoundedBodyText(
+                                            value: url.pathExtension.isEmpty ? "FILE" : url.pathExtension.uppercased(),
+                                            font: DesignTokensV2.Typography.caption
+                                        )
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "arrow.down.to.line")
+                                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                                }
+                                .padding(DesignTokensV2.Spacing.s)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                        .fill(DesignTokensV2.Colors.surface2.opacity(0.45))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                        .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
                                 )
                             }
-                            CopyLinkButton(label: "Copy Attachment URL", url: url, showCopied: $showCopied)
+                            CopyLinkButton(label: "Copy", url: url, showCopied: $showCopied)
                         }
                     }
                 }
@@ -308,16 +356,42 @@ struct OpportunityDetailView: View {
 
                 if let samURL {
                     Link(destination: samURL) {
-                        BoundedBodyText(value: "Open in SAM.gov", color: DesignTokensV2.Colors.accentCyan)
+                        Label("View on SAM.gov", systemImage: "arrow.up.forward.square")
+                            .font(DesignTokensV2.Typography.section)
+                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, DesignTokensV2.Spacing.xs)
                     }
-                    CopyLinkButton(label: "Copy SAM.gov URL", url: samURL, showCopied: $showCopied)
                 }
 
                 if let infoURL {
                     Link(destination: infoURL) {
-                        BoundedBodyText(value: "Open Additional Info", color: DesignTokensV2.Colors.accentCyan)
+                        Label("Open Additional Info", systemImage: "doc.text.magnifyingglass")
+                            .font(DesignTokensV2.Typography.bodyStrong)
+                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, DesignTokensV2.Spacing.xs)
                     }
-                    CopyLinkButton(label: "Copy Additional Info URL", url: infoURL, showCopied: $showCopied)
+                }
+
+                HStack(spacing: DesignTokensV2.Spacing.s) {
+                    if let samURL {
+                        ShareLink(item: samURL) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .font(DesignTokensV2.Typography.bodyStrong)
+                                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, DesignTokensV2.Spacing.s)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                        .fill(DesignTokensV2.Colors.surface2.opacity(0.6))
+                                )
+                        }
+                    }
+
+                    if let copyURL = infoURL ?? samURL {
+                        CopyLinkButton(label: "Copy", url: copyURL, showCopied: $showCopied)
+                    }
                 }
             }
         }
@@ -366,6 +440,7 @@ struct OpportunityDetailView: View {
             message: opportunity.title,
             opportunityID: opportunity.id
         )
+        SearchAdsCoordinator.shared.triggerAfterUserAction("detail_toggle_saved")
     }
 
     private func loadDescriptionIfNeeded() async {
@@ -514,13 +589,26 @@ private struct CopyLinkButton: View {
     @Binding var showCopied: Bool
 
     var body: some View {
-        Button(label) {
+        Button {
             UIPasteboard.general.string = url.absoluteString
             showCopied = true
         }
-        .font(DesignTokensV2.Typography.caption)
-        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        label: {
+            Label(label, systemImage: "doc.on.doc")
+                .font(DesignTokensV2.Typography.bodyStrong)
+                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(DesignTokensV2.Colors.surface2.opacity(0.6))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .stroke(DesignTokensV2.Colors.border.opacity(0.9), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 

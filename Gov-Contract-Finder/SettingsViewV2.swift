@@ -1,15 +1,22 @@
 import SwiftUI
 
 struct SettingsViewV2: View {
-    private let supportIssuesURL = URL(string: "https://github.com/fredylopez/Gov-Contract-Finder/issues")
+    private let supportIssuesURL = URL(string: "https://github.com/fredylopez/Gov-Contract-Finder/blob/main/SUPPORT.md")
+    private let privacyPolicyURL = URL(string: "https://github.com/fredylopez/Gov-Contract-Finder/blob/main/PRIVACY.md")
     private let supportEmail = "support@codebodydynamics.com"
 
     @Bindable var themeController: ThemeController
     @Bindable var watchlistStore: WatchlistStore
     @Bindable var alertsStore: AlertsStore
     @Bindable var workspaceStore: WorkspaceStore
+    @Bindable var tipJarStore: TipJarStore
+    @Bindable var adConsentManager: AdConsentManager
+
+    @Environment(\.openURL) private var openURL
 
     @State private var didReset = false
+    @State private var isShowingSupportAd = false
+    @State private var isShowingDonateAd = false
 
     var body: some View {
         SafeEdgeScrollColumn(maxContentWidth: 820) {
@@ -17,9 +24,13 @@ struct SettingsViewV2: View {
             appearanceSection
             aboutSection
             notificationsSection
+            adPrivacySection
             supportSection
-            dataSection
-            debugSection
+            tipJarSection
+            if shouldShowInternalSettings {
+                dataSection
+                debugSection
+            }
         }
         .background(CyberpunkBackgroundV2())
         .navigationTitle("Settings")
@@ -56,6 +67,7 @@ struct SettingsViewV2: View {
                 ForEach(AppearanceModeV2.allCases) { mode in
                     Button {
                         themeController.setPreferenceV2(mode)
+                        SearchAdsCoordinator.shared.triggerAfterUserAction("settings_theme_\(mode.rawValue)")
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: icon(for: mode))
@@ -123,6 +135,51 @@ struct SettingsViewV2: View {
         }
     }
 
+    private var adPrivacySection: some View {
+        NeoCard {
+            Text("Ad Privacy")
+                .font(DesignTokensV2.Typography.section)
+                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            BoundedBodyText(value: "Personalized ads may be more relevant. You can disable them any time.")
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    BoundedBodyText(value: "Personalized Ads", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
+                    BoundedBodyText(value: "Tracking status: \(adConsentManager.trackingStatusText)")
+                }
+                Spacer()
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { adConsentManager.personalizedAdsEnabled },
+                        set: { enabled in
+                            Task {
+                                await adConsentManager.setPersonalizedAdsEnabled(enabled)
+                            }
+                        }
+                    )
+                )
+                .labelsHidden()
+                .tint(DesignTokensV2.Colors.accentCyan)
+            }
+
+            Button {
+                Task {
+                    await adConsentManager.refreshPrivacyAndConsent()
+                    if let privacyPolicyURL {
+                        openURL(privacyPolicyURL)
+                    }
+                }
+            } label: {
+                Label("Privacy & Consent", systemImage: "hand.raised")
+                    .font(DesignTokensV2.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     @ViewBuilder
     private var supportSection: some View {
         NeoCard {
@@ -132,7 +189,15 @@ struct SettingsViewV2: View {
 
             if let supportIssuesURL {
                 Link(destination: supportIssuesURL) {
-                    Label("Open GitHub Support Page", systemImage: "link")
+                    Label("Open Support Page", systemImage: "link")
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                }
+            }
+
+            if let privacyPolicyURL {
+                Link(destination: privacyPolicyURL) {
+                    Label("Open Privacy Policy", systemImage: "lock.shield")
                         .font(DesignTokensV2.Typography.bodyStrong)
                         .foregroundStyle(DesignTokensV2.Colors.accentCyan)
                 }
@@ -145,6 +210,139 @@ struct SettingsViewV2: View {
                         .foregroundStyle(DesignTokensV2.Colors.accentCyan)
                 }
             }
+
+            Button {
+                Task {
+                    isShowingSupportAd = true
+                    _ = await SearchAdsCoordinator.shared.showSupportAdAsGift()
+                    isShowingSupportAd = false
+                }
+            } label: {
+                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    if isShowingSupportAd {
+                        ProgressView()
+                            .tint(DesignTokensV2.Colors.bg900)
+                    } else {
+                        Image(systemName: "gift")
+                    }
+                    Text(isShowingSupportAd ? "Loading support ad..." : "Support the Developer")
+                }
+                .font(DesignTokensV2.Typography.bodyStrong)
+                .foregroundStyle(DesignTokensV2.Colors.bg900)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignTokensV2.Colors.accentLime, DesignTokensV2.Colors.accentCyan],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isShowingSupportAd)
+
+            Button {
+                Task {
+                    isShowingDonateAd = true
+                    _ = await SearchAdsCoordinator.shared.showSupportAdAsGift()
+                    isShowingDonateAd = false
+                }
+            } label: {
+                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    if isShowingDonateAd {
+                        ProgressView()
+                            .tint(DesignTokensV2.Colors.bg900)
+                    } else {
+                        Image(systemName: "heart.fill")
+                    }
+                    Text(isShowingDonateAd ? "Loading donation ad..." : "Donate with Ad")
+                }
+                .font(DesignTokensV2.Typography.bodyStrong)
+                .foregroundStyle(DesignTokensV2.Colors.bg900)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignTokensV2.Colors.accentMagenta, DesignTokensV2.Colors.accentViolet],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isShowingDonateAd)
+        }
+    }
+
+    private var tipJarSection: some View {
+        NeoCard {
+            HStack(spacing: DesignTokensV2.Spacing.xs) {
+                Image(systemName: "heart.circle.fill")
+                    .foregroundStyle(DesignTokensV2.Colors.accentMagenta)
+                Text("Tip Jar")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            }
+
+            BoundedBodyText(value: "One-time tips help fund app updates and infrastructure.")
+
+            if tipJarStore.isLoadingProducts && tipJarStore.productsByTier.isEmpty {
+                ProgressView("Loading tip options...")
+                    .tint(DesignTokensV2.Colors.accentCyan)
+                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+            }
+
+            ForEach(TipJarStore.TipTier.allCases) { tier in
+                Button {
+                    Task {
+                        await tipJarStore.purchase(tier)
+                    }
+                } label: {
+                    HStack(spacing: DesignTokensV2.Spacing.xs) {
+                        if tipJarStore.purchasingTierID == tier.id {
+                            ProgressView()
+                                .tint(DesignTokensV2.Colors.bg900)
+                        } else {
+                            Image(systemName: tier.icon)
+                        }
+
+                        Text(tipJarStore.purchasingTierID == tier.id ? "Processing..." : "\(tier.title) • \(tipJarStore.price(for: tier))")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .font(DesignTokensV2.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokensV2.Colors.bg900)
+                    .padding(.horizontal, DesignTokensV2.Spacing.m)
+                    .padding(.vertical, DesignTokensV2.Spacing.s)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(tipJarStore.purchasingTierID != nil)
+            }
+
+            if let statusMessage = tipJarStore.statusMessage {
+                BoundedBodyText(value: statusMessage, font: DesignTokensV2.Typography.caption, color: DesignTokensV2.Colors.textSecondary)
+            }
+        }
+        .task {
+            await tipJarStore.loadProductsIfNeeded()
         }
     }
 
@@ -170,6 +368,7 @@ struct SettingsViewV2: View {
                 alertsStore.reset()
                 workspaceStore.reset()
                 didReset = true
+                SearchAdsCoordinator.shared.triggerAfterUserAction("settings_reset_local_data")
             }
             .font(DesignTokensV2.Typography.bodyStrong)
             .foregroundStyle(DesignTokensV2.Colors.danger)
@@ -190,7 +389,22 @@ struct SettingsViewV2: View {
             ))
             .tint(DesignTokensV2.Colors.accentCyan)
             .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            Toggle("Search Ads Enabled", isOn: Binding(
+                get: { FeatureFlags.shared.searchAdsEnabled },
+                set: { FeatureFlags.shared.searchAdsEnabled = $0 }
+            ))
+            .tint(DesignTokensV2.Colors.accentCyan)
+            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
         }
+        #endif
+    }
+
+    private var shouldShowInternalSettings: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
         #endif
     }
 
@@ -222,6 +436,7 @@ struct SettingsViewV2: View {
                         )
                     )
                 }
+                SearchAdsCoordinator.shared.triggerAfterUserAction("settings_alert_rule_\(type.rawValue)")
             }
         )
     }

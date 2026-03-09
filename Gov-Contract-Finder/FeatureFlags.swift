@@ -9,6 +9,7 @@ final class FeatureFlags {
     private let sortControlKey = "feature.sortControl"
     private let darkModeToggleKey = "feature.darkModeToggle"
     private let v2ShellKey = "feature.v2Shell"
+    private let searchAdsKey = "feature.searchAds"
 
     var naicsPresetsEnabled: Bool {
         get { UserDefaults.standard.object(forKey: naicsPresetsKey) as? Bool ?? true }
@@ -38,6 +39,18 @@ final class FeatureFlags {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: v2ShellKey)
+        }
+    }
+
+    var searchAdsEnabled: Bool {
+        get {
+            if let stored = UserDefaults.standard.object(forKey: searchAdsKey) as? Bool {
+                return stored
+            }
+            return true
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: searchAdsKey)
         }
     }
 }

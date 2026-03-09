@@ -71,13 +71,27 @@ struct NeoCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .fill(DesignTokensV2.Colors.surface.opacity(0.9))
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            DesignTokensV2.Colors.surface.opacity(0.95),
+                            DesignTokensV2.Colors.bg800.opacity(0.9)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                .stroke(DesignTokensV2.Colors.accentCyan.opacity(0.38), lineWidth: 1)
         )
-        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.12), radius: 12, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
+                .inset(by: 1)
+                .stroke(DesignTokensV2.Colors.border.opacity(0.55), lineWidth: 1)
+        )
+        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.17), radius: 16, y: 6)
     }
 }
 
@@ -211,8 +225,26 @@ struct ContactRowV2: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
-            if let name = contact.fullName, !name.isEmpty {
-                BoundedBodyText(value: name, font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
+            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.xs) {
+                if let name = contact.fullName, !name.isEmpty {
+                    BoundedBodyText(value: name, font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
+                }
+                Spacer(minLength: 8)
+                if let type = contact.type, !type.isEmpty {
+                    Text(type.capitalized)
+                        .font(DesignTokensV2.Typography.caption)
+                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .padding(.horizontal, DesignTokensV2.Spacing.xs)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(DesignTokensV2.Colors.accentViolet.opacity(0.35))
+                        )
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(DesignTokensV2.Colors.accentViolet.opacity(0.7), lineWidth: 1)
+                        )
+                }
             }
 
             if let title = contact.title, !title.isEmpty {
@@ -227,7 +259,15 @@ struct ContactRowV2: View {
                 BoundedBodyText(value: "Phone: \(phone)")
             }
         }
-        .padding(.vertical, 4)
+        .padding(DesignTokensV2.Spacing.s)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                .fill(DesignTokensV2.Colors.surface2.opacity(0.45))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+        )
     }
 }
 

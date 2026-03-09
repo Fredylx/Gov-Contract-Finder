@@ -104,14 +104,20 @@ struct WorkspaceViewV2: View {
                 color: DesignTokensV2.Colors.textPrimary
             )
 
-            BoundedBodyText(value: "Completion Progress")
+            BoundedBodyText(value: "Completion Progress", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textSecondary)
 
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(DesignTokensV2.Colors.surface2)
+                        .fill(DesignTokensV2.Colors.bg800.opacity(0.8))
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(DesignTokensV2.Colors.accentCyan)
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .frame(width: max(14, proxy.size.width * progress))
                 }
             }
@@ -146,8 +152,12 @@ struct WorkspaceViewV2: View {
                     .padding(.horizontal, DesignTokensV2.Spacing.s)
                     .padding(.vertical, DesignTokensV2.Spacing.xs)
                     .background(
-                        Capsule(style: .continuous)
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
                             .fill(activeTab == tab ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.surface2)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            .stroke((activeTab == tab ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.border).opacity(0.8), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -237,16 +247,53 @@ struct WorkspaceViewV2: View {
 
     private func notesView(record: WorkspaceRecord) -> some View {
         NeoCard {
-            Text("Notes")
-                .font(DesignTokensV2.Typography.section)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-
-            InputFieldV2(title: "Note Title", placeholder: "Capture strategy", text: $newNoteTitle)
-            InputFieldV2(title: "Note Body", placeholder: "Write notes...", text: $newNoteBody)
-
-            NeonButton(title: "Add Note", icon: "square.and.pencil") {
-                addNote(record: record)
+            HStack {
+                Text("Notes")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                Spacer()
+                Button {
+                    addNote(record: record)
+                } label: {
+                    Text("Add Note")
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.bg900)
+                        .padding(.horizontal, DesignTokensV2.Spacing.s)
+                        .padding(.vertical, DesignTokensV2.Spacing.xs)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(DesignTokensV2.Colors.accentCyan)
+                        )
+                }
+                .buttonStyle(.plain)
             }
+
+            InputFieldV2(title: "Title", placeholder: "Capture strategy", text: $newNoteTitle)
+
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                    .fill(DesignTokensV2.Colors.bg800.opacity(0.7))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                    )
+
+                TextEditor(text: $newNoteBody)
+                    .scrollContentBackground(.hidden)
+                    .font(DesignTokensV2.Typography.body)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .padding(DesignTokensV2.Spacing.xs)
+
+                if newNoteBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Add a note... Use @mention to notify team members")
+                        .font(DesignTokensV2.Typography.body)
+                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 14)
+                        .allowsHitTesting(false)
+                }
+            }
+            .frame(minHeight: 132)
 
             ForEach(record.notes) { note in
                 VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
@@ -265,66 +312,108 @@ struct WorkspaceViewV2: View {
                     RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
                         .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
                 )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                        .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+                )
             }
         }
     }
 
     private func documentsView(record: WorkspaceRecord) -> some View {
         NeoCard {
-            Text("Documents")
-                .font(DesignTokensV2.Typography.section)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            HStack {
+                Text("Documents (\(record.documents.count))")
+                    .font(DesignTokensV2.Typography.section)
+                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+                Spacer()
+
+                Button {
+                    addDocument(record: record)
+                } label: {
+                    Label("Upload", systemImage: "plus")
+                        .font(DesignTokensV2.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokensV2.Colors.bg900)
+                        .padding(.horizontal, DesignTokensV2.Spacing.s)
+                        .padding(.vertical, DesignTokensV2.Spacing.xs)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(DesignTokensV2.Colors.accentCyan)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
 
             InputFieldV2(title: "Document Name", placeholder: "Capability Statement", text: $newDocName)
             InputFieldV2(title: "Document URL", placeholder: "https://...", text: $newDocURL)
 
-            NeonButton(title: "Add Document", icon: "paperclip") {
-                addDocument(record: record)
-            }
-
             ForEach(record.documents) { document in
-                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
-                    BoundedBodyText(
-                        value: document.name,
-                        font: DesignTokensV2.Typography.bodyStrong,
-                        color: DesignTokensV2.Colors.textPrimary
-                    )
-                    if let url = URL(string: document.url) {
-                        Link(destination: url) {
-                            BoundedBodyText(value: document.url, color: DesignTokensV2.Colors.accentCyan)
+                if let url = URL(string: document.url) {
+                    Link(destination: url) {
+                        HStack(spacing: DesignTokensV2.Spacing.s) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                BoundedBodyText(
+                                    value: document.name,
+                                    font: DesignTokensV2.Typography.bodyStrong,
+                                    color: DesignTokensV2.Colors.textPrimary
+                                )
+                                BoundedBodyText(value: url.pathExtension.isEmpty ? "FILE" : url.pathExtension.uppercased(), font: DesignTokensV2.Typography.caption)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "arrow.down.to.line")
+                                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
                         }
-                    } else {
-                        BoundedBodyText(value: document.url)
+                        .padding(DesignTokensV2.Spacing.s)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                                .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+                        )
                     }
                 }
-                .padding(DesignTokensV2.Spacing.s)
-                .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
-                )
             }
         }
     }
 
     private func activityView(record: WorkspaceRecord) -> some View {
         NeoCard {
-            Text("Activity")
+            Text("Recent Activity")
                 .font(DesignTokensV2.Typography.section)
                 .foregroundStyle(DesignTokensV2.Colors.textPrimary)
 
             if record.activity.isEmpty {
                 BoundedBodyText(value: "No activity yet.")
             } else {
-                ForEach(record.activity) { activity in
-                    VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
-                        BoundedBodyText(value: activity.text, color: DesignTokensV2.Colors.textPrimary)
-                        BoundedBodyText(value: relativeDate(activity.createdAt), font: DesignTokensV2.Typography.caption)
+                ForEach(Array(record.activity.prefix(8)).indices, id: \.self) { index in
+                    let activity = record.activity[index]
+                    HStack(alignment: .top, spacing: DesignTokensV2.Spacing.s) {
+                        VStack(spacing: 2) {
+                            Circle()
+                                .fill(DesignTokensV2.Colors.accentCyan)
+                                .frame(width: 9, height: 9)
+                            if index < min(record.activity.count, 8) - 1 {
+                                Rectangle()
+                                    .fill(DesignTokensV2.Colors.accentCyan.opacity(0.35))
+                                    .frame(width: 1)
+                            }
+                        }
+                        .frame(width: 10)
+
+                        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
+                            BoundedBodyText(value: activity.text, color: DesignTokensV2.Colors.textPrimary)
+                            BoundedBodyText(value: shortDate(activity.createdAt), font: DesignTokensV2.Typography.caption)
+                        }
                     }
-                    .padding(DesignTokensV2.Spacing.s)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                            .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
-                    )
                 }
             }
         }

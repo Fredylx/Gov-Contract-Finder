@@ -97,6 +97,10 @@ final class DiscoverViewModelV2 {
         !isLoading && !isLoadingMore && Date().timeIntervalSince(lastSearchTapAt) >= searchCooldown
     }
 
+    var hasValidSearchInputs: Bool {
+        validateSearchInputs() == nil
+    }
+
     var activeFilters: [ActiveFilter] {
         var filters: [ActiveFilter] = []
 
@@ -348,6 +352,7 @@ struct DiscoverViewV2: View {
                         selected: isSoftwarePresetSelected
                     ) {
                         viewModel.applySoftwarePreset()
+                        SearchAdsCoordinator.shared.triggerAfterUserAction("discover_preset_software")
                     }
 
                     DiscoverPresetButton(
@@ -358,6 +363,7 @@ struct DiscoverViewV2: View {
                         selected: isSmallCosPresetSelected
                     ) {
                         viewModel.applySmallCompanyPreset()
+                        SearchAdsCoordinator.shared.triggerAfterUserAction("discover_preset_small_cos")
                     }
                 }
 
@@ -369,6 +375,7 @@ struct DiscoverViewV2: View {
                     selected: isSoftwareSmallPresetSelected
                 ) {
                     viewModel.applySoftwareSmallCompanyPreset()
+                    SearchAdsCoordinator.shared.triggerAfterUserAction("discover_preset_software_small")
                 }
 
                 HStack(spacing: DesignTokensV2.Spacing.s) {
@@ -395,7 +402,7 @@ struct DiscoverViewV2: View {
             }
 
             Button {
-                Task { await viewModel.search() }
+                Task { await runSearchFromCTA() }
             } label: {
                 HStack(spacing: DesignTokensV2.Spacing.xs) {
                     if viewModel.isLoading {
@@ -438,6 +445,7 @@ struct DiscoverViewV2: View {
                 withAnimation(DesignTokensV2.Animation.quick) {
                     viewModel.showAdvancedFilters.toggle()
                 }
+                SearchAdsCoordinator.shared.triggerAfterUserAction("discover_toggle_filters")
             } label: {
                 HStack(spacing: DesignTokensV2.Spacing.xs) {
                     Image(systemName: "slider.horizontal.3")
@@ -468,6 +476,7 @@ struct DiscoverViewV2: View {
                             ForEach(DiscoverViewModelV2.SortOption.allCases) { option in
                                 Button(option.title) {
                                     viewModel.sortOption = option
+                                    SearchAdsCoordinator.shared.triggerAfterUserAction("discover_sort_\(option.rawValue)")
                                 }
                             }
                         } label: {
@@ -515,6 +524,7 @@ struct DiscoverViewV2: View {
                                 value: filter.value
                             ) {
                                 viewModel.clearFilter(filter.key)
+                                SearchAdsCoordinator.shared.triggerAfterUserAction("discover_clear_filter")
                             }
                         }
                     }
@@ -642,6 +652,16 @@ struct DiscoverViewV2: View {
             message: opportunity.title,
             opportunityID: opportunity.id
         )
+        SearchAdsCoordinator.shared.triggerAfterUserAction("discover_toggle_saved")
+    }
+
+    private func runSearchFromCTA() async {
+        guard viewModel.canSubmitSearch else { return }
+
+        _ = await SearchAdsCoordinator.shared.showSearchInterstitialForSearchTap()
+
+        await viewModel.search()
+        SearchAdsCoordinator.shared.preloadSearchInterstitial()
     }
 
     private func markViewed(_ id: String) {

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FD9B4F3D324BE3F100AA1001 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = FD9B4F3E324BE3F100AA1001 /* GoogleMobileAds */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		FD4E86CD2F2E8A52006B6E10 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,8 @@
 		FD4E86BA2F2E8A50006B6E10 /* Gov-Contract-Finder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gov-Contract-Finder.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD4E86CC2F2E8A52006B6E10 /* Gov-Contract-FinderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gov-Contract-FinderTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD4E86D62F2E8A52006B6E10 /* Gov-Contract-FinderUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gov-Contract-FinderUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FDA100000000000000000001 /* Config.debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.debug.xcconfig; sourceTree = "<group>"; };
+		FDA100000000000000000002 /* Config.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FD9B4F3D324BE3F100AA1001 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,6 +95,8 @@
 		FD4E86B12F2E8A50006B6E10 = {
 			isa = PBXGroup;
 			children = (
+				FDA100000000000000000001 /* Config.debug.xcconfig */,
+				FDA100000000000000000002 /* Config.release.xcconfig */,
 				FD4E86BC2F2E8A50006B6E10 /* Gov-Contract-Finder */,
 				FD4E86CF2F2E8A52006B6E10 /* Gov-Contract-FinderTests */,
 				FD4E86D92F2E8A52006B6E10 /* Gov-Contract-FinderUITests */,
@@ -125,6 +134,7 @@
 			);
 			name = "Gov-Contract-Finder";
 			packageProductDependencies = (
+				FD9B4F3E324BE3F100AA1001 /* GoogleMobileAds */,
 			);
 			productName = "Gov-Contract-Finder";
 			productReference = FD4E86BA2F2E8A50006B6E10 /* Gov-Contract-Finder.app */;
@@ -208,6 +218,9 @@
 			);
 			mainGroup = FD4E86B12F2E8A50006B6E10;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FD9B4F3F324BE3F100AA1001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FD4E86BB2F2E8A50006B6E10 /* Products */;
 			projectDirPath = "";
@@ -405,6 +418,7 @@
 		};
 		FD4E86E12F2E8A52006B6E10 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FDA100000000000000000001 /* Config.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -414,12 +428,14 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gov-Contract-Finder/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Gov Contract Finder";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use permission to show more relevant ads and support free app features.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -440,6 +456,7 @@
 		};
 		FD4E86E22F2E8A52006B6E10 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FDA100000000000000000002 /* Config.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -449,12 +466,14 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gov-Contract-Finder/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Gov Contract Finder";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use permission to show more relevant ads and support free app features.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -597,6 +616,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FD9B4F3F324BE3F100AA1001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FD9B4F3E324BE3F100AA1001 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FD9B4F3F324BE3F100AA1001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FD4E86B22F2E8A50006B6E10 /* Project object */;
 }
