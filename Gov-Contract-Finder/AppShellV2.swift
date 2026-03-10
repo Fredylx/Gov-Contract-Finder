@@ -119,7 +119,6 @@ struct RootViewV2: View {
         .dismissKeyboardOnTap()
         .preferredColorScheme(themeController.preferenceV2.colorScheme)
         .task {
-            await tipJarStore.startIfNeeded()
             await adConsentManager.prepareOnLaunch()
         }
     }
