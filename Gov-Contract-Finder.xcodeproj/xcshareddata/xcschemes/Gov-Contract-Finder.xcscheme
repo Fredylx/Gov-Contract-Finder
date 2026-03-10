@@ -74,13 +74,6 @@
             ReferencedContainer = "container:Gov-Contract-Finder.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "SAM_API_KEY"
-            value = "SAM-2364170d-9cdf-400d-812e-74cfdb895f3b"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -105,5 +98,23 @@
    <ArchiveAction
       buildConfiguration = "Release"
       revealArchiveInOrganizer = "YES">
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Stamp Timestamp Build Number"
+               scriptText = "STAMP=$(date +%Y.%m%d.%H%M%S); PBXPROJ=&quot;$PROJECT_FILE_PATH/project.pbxproj&quot;; if [ ! -f &quot;$PBXPROJ&quot; ]; then echo &quot;error: [BuildNumber] project.pbxproj not found at $PBXPROJ&quot;; exit 1; fi; /usr/bin/sed -i &apos;&apos; -E &quot;s/CURRENT_PROJECT_VERSION = [^;]+;/CURRENT_PROJECT_VERSION = $STAMP;/g&quot; &quot;$PBXPROJ&quot;; echo &quot;[BuildNumber] CURRENT_PROJECT_VERSION=$STAMP&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "FD4E86B92F2E8A50006B6E10"
+                     BuildableName = "Gov-Contract-Finder.app"
+                     BlueprintName = "Gov-Contract-Finder"
+                     ReferencedContainer = "container:Gov-Contract-Finder.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
    </ArchiveAction>
 </Scheme>

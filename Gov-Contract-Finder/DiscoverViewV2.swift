@@ -1,6 +1,9 @@
 import SwiftUI
 import Observation
 import OSLog
+#if canImport(GoogleMobileAds)
+import GoogleMobileAds
+#endif
 
 @MainActor
 @Observable
@@ -326,6 +329,12 @@ struct DiscoverViewV2: View {
         .background(CyberpunkBackgroundV2())
         .navigationTitle("Discover")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: viewModel.opportunities.count)
+        }
+        .onChange(of: viewModel.opportunities.count) { _, count in
+            SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: count)
+        }
     }
 
     private var header: some View {
@@ -591,7 +600,8 @@ struct DiscoverViewV2: View {
             }
 
             LazyVStack(spacing: DesignTokensV2.Spacing.s) {
-                ForEach(viewModel.opportunities) { opportunity in
+                ForEach(Array(viewModel.opportunities.enumerated()), id: \.element.id) { index, opportunity in
+                    let resultNumber = index + 1
                     ZStack(alignment: .topTrailing) {
                         NavigationLink {
                             OpportunityDetailView(
@@ -608,7 +618,7 @@ struct DiscoverViewV2: View {
                         }
                         .buttonStyle(.plain)
                         .simultaneousGesture(TapGesture().onEnded {
-                            markViewed(opportunity.id)
+                            handleOpportunityTap(opportunityID: opportunity.id)
                         })
                         .task {
                             await viewModel.loadMoreIfNeeded(currentID: opportunity.id)
@@ -633,6 +643,8 @@ struct DiscoverViewV2: View {
                         .buttonStyle(.plain)
                         .padding(DesignTokensV2.Spacing.s)
                     }
+
+                    nativeAdRow(afterResultNumber: resultNumber)
                 }
 
                 if viewModel.isLoadingMore {
@@ -658,16 +670,33 @@ struct DiscoverViewV2: View {
     private func runSearchFromCTA() async {
         guard viewModel.canSubmitSearch else { return }
 
-        _ = await SearchAdsCoordinator.shared.showSearchInterstitialForSearchTap()
-
         await viewModel.search()
+        guard viewModel.errorMessage == nil else { return }
+        SearchAdsCoordinator.shared.notifySearchCompleted()
+        SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: viewModel.opportunities.count)
         SearchAdsCoordinator.shared.preloadSearchInterstitial()
+    }
+
+    private func handleOpportunityTap(opportunityID: String) {
+        markViewed(opportunityID)
+        Task {
+            _ = await SearchAdsCoordinator.shared.registerDetailOpenAndMaybeShowInterstitial()
+        }
     }
 
     private func markViewed(_ id: String) {
         guard !viewedOpportunityIDs.contains(id) else { return }
         viewedOpportunityIDs.insert(id)
         UserDefaults.standard.set(Array(viewedOpportunityIDs), forKey: Self.viewedIDsStorageKey)
+    }
+
+    @ViewBuilder
+    private func nativeAdRow(afterResultNumber resultNumber: Int) -> some View {
+        #if canImport(GoogleMobileAds)
+        if let nativeAd = SearchAdsCoordinator.shared.nativeAd(afterResultNumber: resultNumber) {
+            DiscoverNativeAdCardV2(nativeAd: nativeAd)
+        }
+        #endif
     }
 }
 
@@ -782,6 +811,154 @@ private struct RemovableFilterChipV2: View {
         )
     }
 }
+
+#if canImport(GoogleMobileAds)
+private struct DiscoverNativeAdCardV2: View {
+    let nativeAd: NativeAd
+
+    var body: some View {
+        NeoCard {
+            HStack {
+                Text("Sponsored")
+                    .font(DesignTokensV2.Typography.caption)
+                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                Spacer()
+                Image(systemName: "megaphone.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+            }
+
+            NativeAdRepresentableV2(nativeAd: nativeAd)
+                .frame(maxWidth: .infinity, minHeight: 108)
+        }
+    }
+}
+
+private struct NativeAdRepresentableV2: UIViewRepresentable {
+    let nativeAd: NativeAd
+
+    func makeUIView(context: Context) -> NativeAdRenderedViewV2 {
+        NativeAdRenderedViewV2()
+    }
+
+    func updateUIView(_ uiView: NativeAdRenderedViewV2, context: Context) {
+        uiView.apply(ad: nativeAd)
+    }
+}
+
+private final class NativeAdRenderedViewV2: NativeAdView {
+    private let headlineLabel = UILabel()
+    private let bodyLabel = UILabel()
+    private let advertiserLabel = UILabel()
+    private let iconViewImage = UIImageView()
+    private let ctaButton = UIButton(type: .system)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setup() {
+        backgroundColor = .clear
+
+        headlineLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        headlineLabel.textColor = UIColor(DesignTokensV2.Colors.textPrimary)
+        headlineLabel.numberOfLines = 0
+
+        advertiserLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        advertiserLabel.textColor = UIColor(DesignTokensV2.Colors.textSecondary)
+        advertiserLabel.numberOfLines = 1
+
+        bodyLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        bodyLabel.textColor = UIColor(DesignTokensV2.Colors.textSecondary)
+        bodyLabel.numberOfLines = 3
+
+        iconViewImage.contentMode = .scaleAspectFit
+        iconViewImage.clipsToBounds = true
+        iconViewImage.layer.cornerRadius = 8
+        iconViewImage.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            iconViewImage.widthAnchor.constraint(equalToConstant: 40),
+            iconViewImage.heightAnchor.constraint(equalToConstant: 40)
+        ])
+
+        ctaButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        ctaButton.setTitleColor(UIColor(DesignTokensV2.Colors.bg900), for: .normal)
+        ctaButton.backgroundColor = UIColor(DesignTokensV2.Colors.accentCyan)
+        ctaButton.layer.cornerRadius = 10
+        ctaButton.configuration = .plain()
+        ctaButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+        ctaButton.isUserInteractionEnabled = false
+
+        let textStack = UIStackView(arrangedSubviews: [headlineLabel, advertiserLabel, bodyLabel])
+        textStack.axis = .vertical
+        textStack.alignment = .fill
+        textStack.spacing = 4
+
+        let topRow = UIStackView(arrangedSubviews: [iconViewImage, textStack, ctaButton])
+        topRow.axis = .horizontal
+        topRow.alignment = .top
+        topRow.spacing = 10
+
+        addSubview(topRow)
+        topRow.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            topRow.topAnchor.constraint(equalTo: topAnchor),
+            topRow.leadingAnchor.constraint(equalTo: leadingAnchor),
+            topRow.trailingAnchor.constraint(equalTo: trailingAnchor),
+            topRow.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+
+        headlineView = headlineLabel
+        bodyView = bodyLabel
+        advertiserView = advertiserLabel
+        iconView = iconViewImage
+        callToActionView = ctaButton
+    }
+
+    func apply(ad: NativeAd) {
+        headlineLabel.text = ad.headline
+
+        if let advertiser = ad.advertiser, !advertiser.isEmpty {
+            advertiserLabel.text = advertiser
+            advertiserLabel.isHidden = false
+        } else {
+            advertiserLabel.text = nil
+            advertiserLabel.isHidden = true
+        }
+
+        if let body = ad.body, !body.isEmpty {
+            bodyLabel.text = body
+            bodyLabel.isHidden = false
+        } else {
+            bodyLabel.text = nil
+            bodyLabel.isHidden = true
+        }
+
+        if let iconImage = ad.icon?.image {
+            iconViewImage.image = iconImage
+            iconViewImage.isHidden = false
+        } else {
+            iconViewImage.image = nil
+            iconViewImage.isHidden = true
+        }
+
+        if let callToAction = ad.callToAction, !callToAction.isEmpty {
+            ctaButton.setTitle(callToAction, for: .normal)
+            ctaButton.isHidden = false
+        } else {
+            ctaButton.setTitle(nil, for: .normal)
+            ctaButton.isHidden = true
+        }
+
+        nativeAd = ad
+    }
+}
+#endif
 
 private extension String {
     var nilIfEmpty: String? {

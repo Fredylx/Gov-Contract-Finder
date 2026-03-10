@@ -26,7 +26,6 @@ struct SettingsViewV2: View {
             notificationsSection
             adPrivacySection
             supportSection
-            tipJarSection
             if shouldShowInternalSettings {
                 dataSection
                 debugSection

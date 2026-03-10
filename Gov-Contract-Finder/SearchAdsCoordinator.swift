@@ -108,12 +108,24 @@ final class SearchAdsCoordinator: NSObject {
         minActionsBetweenShows: 2
     )
 
+    private let nativeAdFrequency = 10
+    private var detailOpensSinceLastInterstitial = 0
+    private var nextDetailInterstitialThreshold = Int.random(in: 3...5)
+    private var shouldPrioritizeNextDetailInterstitial = false
+
     private var hasInitialized = false
     private var isPreloading = false
     private var isPresenting = false
 
     #if canImport(GoogleMobileAds)
     private var interstitial: InterstitialAd?
+    private var nativeAdLoader: AdLoader?
+    private var isLoadingNativeAd = false
+    private var nativeLoadStartedAt: Date?
+    private var currentNativeSlot: Int?
+    private var nativeSlotsQueued: [Int] = []
+    private var attemptedNativeSlots: Set<Int> = []
+    private var nativeAdsBySlot: [Int: NativeAd] = [:]
     private var presentationContinuation: CheckedContinuation<SearchAdPresentationOutcome, Never>?
     #endif
 
@@ -178,6 +190,83 @@ final class SearchAdsCoordinator: NSObject {
         #endif
     }
 
+    func notifySearchCompleted() {
+        shouldPrioritizeNextDetailInterstitial = true
+        #if canImport(GoogleMobileAds)
+        attemptedNativeSlots.removeAll()
+        nativeSlotsQueued.removeAll()
+        #endif
+    }
+
+    func preloadNativeAdsIfNeeded(resultCount: Int) {
+        guard FeatureFlags.shared.searchAdsEnabled else { return }
+        guard resultCount >= nativeAdFrequency else { return }
+        guard hasInitialized else {
+            configureOnLaunchIfNeeded()
+            return
+        }
+
+        #if canImport(GoogleMobileAds)
+        let slotRange = stride(from: nativeAdFrequency, through: resultCount, by: nativeAdFrequency)
+        for slot in slotRange {
+            guard nativeAdsBySlot[slot] == nil else { continue }
+            guard !attemptedNativeSlots.contains(slot) else { continue }
+            guard !nativeSlotsQueued.contains(slot) else { continue }
+            nativeSlotsQueued.append(slot)
+        }
+        loadNextNativeAdIfNeeded()
+        #endif
+    }
+
+    #if canImport(GoogleMobileAds)
+    func nativeAd(afterResultNumber resultNumber: Int) -> NativeAd? {
+        nativeAdsBySlot[resultNumber]
+    }
+    #endif
+
+    func registerDetailOpenAndMaybeShowInterstitial() async -> SearchAdPresentationOutcome {
+        guard FeatureFlags.shared.searchAdsEnabled else {
+            return .skippedDisabled
+        }
+
+        configureOnLaunchIfNeeded()
+
+        if shouldPrioritizeNextDetailInterstitial {
+            shouldPrioritizeNextDetailInterstitial = false
+            let prioritizedOutcome = await showInterstitialIfAllowed(
+                reason: "detail_open_post_search",
+                ignoreCooldown: false,
+                ignoreActionCadence: true,
+                ignoreSessionCap: false,
+                registerAction: false
+            )
+            if case .shown = prioritizedOutcome {
+                detailOpensSinceLastInterstitial = 0
+                nextDetailInterstitialThreshold = Int.random(in: 3...5)
+                return prioritizedOutcome
+            }
+        }
+
+        detailOpensSinceLastInterstitial += 1
+        debugLog(
+            "detail open count=\(detailOpensSinceLastInterstitial) threshold=\(nextDetailInterstitialThreshold)"
+        )
+
+        guard detailOpensSinceLastInterstitial >= nextDetailInterstitialThreshold else {
+            return .skippedNotReady
+        }
+
+        detailOpensSinceLastInterstitial = 0
+        nextDetailInterstitialThreshold = Int.random(in: 3...5)
+        return await showInterstitialIfAllowed(
+            reason: "detail_open_threshold",
+            ignoreCooldown: false,
+            ignoreActionCadence: true,
+            ignoreSessionCap: false,
+            registerAction: false
+        )
+    }
+
     func showSearchInterstitialIfAllowed() async -> SearchAdPresentationOutcome {
         await showInterstitialIfAllowed(
             reason: "search",
@@ -199,15 +288,7 @@ final class SearchAdsCoordinator: NSObject {
     }
 
     func triggerAfterUserAction(_ action: String) {
-        Task { @MainActor in
-            _ = await showInterstitialIfAllowed(
-                reason: action,
-                ignoreCooldown: false,
-                ignoreActionCadence: false,
-                ignoreSessionCap: false,
-                registerAction: true
-            )
-        }
+        debugLog("action observed=\(action) (no interstitial on generic action)")
     }
 
     func showSupportAdAsGift() async -> SearchAdPresentationOutcome {
@@ -307,6 +388,23 @@ final class SearchAdsCoordinator: NSObject {
         return "ca-app-pub-3940256099942544/4411468910"
     }
 
+    private func discoverNativeAdUnitID() -> String {
+        let configured = (Bundle.main.object(forInfoDictionaryKey: "ADMOB_DISCOVER_NATIVE_AD_UNIT_ID") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let configured,
+           !configured.isEmpty,
+           !configured.hasPrefix("REPLACE_WITH") {
+            return configured
+        }
+
+        #if DEBUG
+        // Google sample native test unit for iOS.
+        return "ca-app-pub-3940256099942544/3986624511"
+        #else
+        return ""
+        #endif
+    }
+
     #if canImport(GoogleMobileAds)
     private func buildAdRequest() -> Request {
         let request = Request()
@@ -321,6 +419,49 @@ final class SearchAdsCoordinator: NSObject {
         }
 
         return request
+    }
+
+    private func loadNextNativeAdIfNeeded() {
+        guard !isLoadingNativeAd else { return }
+        guard let slot = nativeSlotsQueued.first else { return }
+
+        let adUnitID = discoverNativeAdUnitID()
+        guard !adUnitID.isEmpty else {
+            debugLog("native preload skipped missing ad unit id")
+            nativeSlotsQueued.removeAll()
+            return
+        }
+
+        nativeSlotsQueued.removeFirst()
+        attemptedNativeSlots.insert(slot)
+        currentNativeSlot = slot
+        isLoadingNativeAd = true
+        nativeLoadStartedAt = Date()
+
+        let request = buildAdRequest()
+        let loader = AdLoader(
+            adUnitID: adUnitID,
+            rootViewController: Self.topMostViewController(),
+            adTypes: [AdLoaderAdType.native],
+            options: nil
+        )
+        loader.delegate = self
+        nativeAdLoader = loader
+        debugLog("native preload start slot=\(slot) adUnit=\(adUnitID)")
+        loader.load(request)
+
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(8))
+            guard let self else { return }
+            guard self.isLoadingNativeAd else { return }
+            let elapsedMs = Int(Date().timeIntervalSince(self.nativeLoadStartedAt ?? Date()) * 1000)
+            self.debugLog("native preload timeout slot=\(slot) elapsedMs=\(elapsedMs)")
+            self.isLoadingNativeAd = false
+            self.nativeLoadStartedAt = nil
+            self.currentNativeSlot = nil
+            self.nativeAdLoader = nil
+            self.loadNextNativeAdIfNeeded()
+        }
     }
     #endif
 
@@ -370,6 +511,42 @@ extension SearchAdsCoordinator: FullScreenContentDelegate {
         guard let continuation = presentationContinuation else { return }
         presentationContinuation = nil
         continuation.resume(returning: .failed(message: error.localizedDescription))
+    }
+}
+#endif
+
+#if canImport(GoogleMobileAds)
+extension SearchAdsCoordinator: AdLoaderDelegate, NativeAdLoaderDelegate {
+    func adLoader(_ adLoader: AdLoader, didReceive nativeAd: NativeAd) {
+        guard adLoader === nativeAdLoader else { return }
+        guard let slot = currentNativeSlot else { return }
+
+        nativeAd.rootViewController = Self.topMostViewController()
+        nativeAdsBySlot[slot] = nativeAd
+
+        let elapsedMs = Int(Date().timeIntervalSince(nativeLoadStartedAt ?? Date()) * 1000)
+        debugLog("native preload success slot=\(slot) elapsedMs=\(elapsedMs)")
+    }
+
+    func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: any Error) {
+        guard adLoader === nativeAdLoader else { return }
+        let slot = currentNativeSlot.map(String.init) ?? "unknown"
+        let elapsedMs = Int(Date().timeIntervalSince(nativeLoadStartedAt ?? Date()) * 1000)
+        debugLog("native preload failed slot=\(slot) elapsedMs=\(elapsedMs) error=\"\(error.localizedDescription)\"")
+        completeNativeLoadAndContinue()
+    }
+
+    func adLoaderDidFinishLoading(_ adLoader: AdLoader) {
+        guard adLoader === nativeAdLoader else { return }
+        completeNativeLoadAndContinue()
+    }
+
+    private func completeNativeLoadAndContinue() {
+        isLoadingNativeAd = false
+        nativeLoadStartedAt = nil
+        currentNativeSlot = nil
+        nativeAdLoader = nil
+        loadNextNativeAdIfNeeded()
     }
 }
 #endif
