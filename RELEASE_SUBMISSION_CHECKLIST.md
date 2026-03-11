@@ -22,6 +22,9 @@
   - [ ] Release Settings does not show Local Data/Debug cards
 
 ## Metadata
+- [ ] Home Screen Name (CFBundleDisplayName): `GovHunter`
+- [ ] App Store Name: `Gov Contract Hunter`
+- [ ] App Subtitle: `Government Contract Finder`
 - [ ] Final app description, subtitle, keywords
 - [ ] Category and age rating
 - [ ] App screenshots for required device classes

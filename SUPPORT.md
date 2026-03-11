@@ -1,4 +1,4 @@
-# Gov Contract Finder Support
+# Gov Contract Hunter Support
 
 If you need help, contact us:
 

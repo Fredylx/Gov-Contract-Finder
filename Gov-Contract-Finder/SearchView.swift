@@ -67,10 +67,10 @@ struct SearchView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Gov Contract Finder")
+            Text("Gov Contract Hunter")
                 .font(DesignSystem.Typography.titleXL)
                 .foregroundStyle(DesignSystem.Colors.primaryText)
-            Text("Search federal opportunities and reach out fast.")
+            Text("Government Contract Finder")
                 .font(DesignSystem.Typography.body)
                 .foregroundStyle(DesignSystem.Colors.secondaryText)
         }

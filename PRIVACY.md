@@ -1,4 +1,4 @@
-# Gov Contract Finder Privacy Policy
+# Gov Contract Hunter Privacy Policy
 
 Last updated: March 8, 2026
 

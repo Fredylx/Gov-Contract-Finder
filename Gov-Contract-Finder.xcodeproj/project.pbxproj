@@ -428,7 +428,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gov-Contract-Finder/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Gov Contract Finder";
+				INFOPLIST_KEY_CFBundleDisplayName = GovHunter;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use permission to show more relevant ads and support free app features.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -466,7 +466,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gov-Contract-Finder/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Gov Contract Finder";
+				INFOPLIST_KEY_CFBundleDisplayName = GovHunter;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use permission to show more relevant ads and support free app features.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

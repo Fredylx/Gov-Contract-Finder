@@ -1,8 +1,8 @@
-# Gov Contract Finder Terms of Use
+# Gov Contract Hunter Terms of Use
 
 Last updated: March 8, 2026
 
-By using Gov Contract Finder, you agree to these terms.
+By using Gov Contract Hunter, you agree to these terms.
 
 ## Service scope
 - The app helps discover and organize publicly available U.S. government opportunity data.

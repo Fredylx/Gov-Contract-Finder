@@ -60,7 +60,7 @@ struct SettingsViewV2: View {
                     .foregroundStyle(DesignTokensV2.Colors.textPrimary)
             }
 
-            BoundedBodyText(value: "Choose how Gov Contract Finder looks on your device")
+            BoundedBodyText(value: "Choose how Gov Contract Hunter looks on your device")
 
             HStack(spacing: DesignTokensV2.Spacing.xs) {
                 ForEach(AppearanceModeV2.allCases) { mode in

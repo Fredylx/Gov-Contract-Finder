@@ -39,7 +39,7 @@ final class SAMAPIClient {
         var errorDescription: String? {
             switch self {
             case .missingAPIKey:
-                return "Missing SAM API Key. Set SAM_API_KEY in your CI/build environment or Xcode scheme environment."
+                return "Missing SAM API Key. Configure SAM_API_KEY in xcconfig/build settings or scheme environment."
             case .badStatus(let code):
                 return "Server returned status code: \(code)."
             case .invalidQuery:

@@ -122,7 +122,7 @@ final class TipJarStore {
                 switch verification {
                 case .verified(let transaction):
                     await finishIfTipTransaction(transaction)
-                    statusMessage = "Thanks for supporting Gov Contract Finder."
+                    statusMessage = "Thanks for supporting Gov Contract Hunter."
                 case .unverified(_, let error):
                     statusMessage = "Purchase could not be verified."
                     logger.error("purchase unverified error=\(error.localizedDescription, privacy: .public)")
