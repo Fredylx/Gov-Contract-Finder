@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsViewV2: View {
-    private let supportIssuesURL = URL(string: "https://github.com/fredylopez/Gov-Contract-Finder/blob/main/SUPPORT.md")
-    private let privacyPolicyURL = URL(string: "https://github.com/fredylopez/Gov-Contract-Finder/blob/main/PRIVACY.md")
+    private let supportIssuesURL = URL(string: "https://github.com/Fredylx/Gov-Contract-Finder/blob/codex/submission-v1/SUPPORT.md")
+    private let privacyPolicyURL = URL(string: "https://github.com/Fredylx/Gov-Contract-Finder/blob/codex/submission-v1/PRIVACY.md")
     private let supportEmail = "support@codebodydynamics.com"
 
     @Bindable var themeController: ThemeController
