@@ -55,6 +55,10 @@ final class WatchlistStore {
         items.removeAll { $0.opportunityID == opportunityID }
     }
 
+    func removeAll() {
+        items = []
+    }
+
     func setStatus(opportunityID: String, status: WatchStatus) {
         guard let index = items.firstIndex(where: { $0.opportunityID == opportunityID }) else { return }
         items[index].status = status
@@ -68,7 +72,7 @@ final class WatchlistStore {
     }
 
     func reset() {
-        items = []
+        removeAll()
     }
 
     private func persist() {

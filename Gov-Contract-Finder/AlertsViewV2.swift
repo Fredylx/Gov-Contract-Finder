@@ -66,14 +66,14 @@ struct AlertsViewV2: View {
                     }
 
                     HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        AlertActionPill(
+                        ActionPillV2(
                             title: alert.isRead ? "Mark Unread" : "Mark Read",
                             tint: DesignTokensV2.Colors.success
                         ) {
                             alertsStore.markRead(alert.id, isRead: !alert.isRead)
                         }
 
-                        AlertActionPill(
+                        ActionPillV2(
                             title: "Dismiss",
                             tint: DesignTokensV2.Colors.danger
                         ) {
@@ -140,14 +140,14 @@ struct AlertsViewV2: View {
                     }
 
                     HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        AlertActionPill(
+                        ActionPillV2(
                             title: rule.enabled ? "Pause" : "Activate",
                             tint: rule.enabled ? DesignTokensV2.Colors.warning : DesignTokensV2.Colors.success
                         ) {
                             alertsStore.setRuleEnabled(id: rule.id, enabled: !rule.enabled)
                         }
 
-                        AlertActionPill(title: "Delete", tint: DesignTokensV2.Colors.danger) {
+                        ActionPillV2(title: "Delete", tint: DesignTokensV2.Colors.danger) {
                             alertsStore.rules.removeAll { $0.id == rule.id }
                         }
 
@@ -211,30 +211,5 @@ struct AlertsViewV2: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
         return formatter.localizedString(for: date, relativeTo: Date())
-    }
-}
-
-private struct AlertActionPill: View {
-    let title: String
-    let tint: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(tint)
-                .padding(.horizontal, DesignTokensV2.Spacing.s)
-                .padding(.vertical, DesignTokensV2.Spacing.xs)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(tint.opacity(0.15))
-                )
-                .overlay(
-                    Capsule(style: .continuous)
-                        .stroke(tint.opacity(0.45), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -1,3 +1,4 @@
+import Observation
 import SwiftUI
 
 struct SettingsViewV2: View {
@@ -26,6 +27,7 @@ struct SettingsViewV2: View {
             notificationsSection
             adPrivacySection
             supportSection
+            tipJarSection
             if shouldShowInternalSettings {
                 dataSection
                 debugSection
@@ -341,7 +343,7 @@ struct SettingsViewV2: View {
             }
         }
         .task {
-            await tipJarStore.loadProductsIfNeeded()
+            await tipJarStore.startIfNeeded()
         }
     }
 

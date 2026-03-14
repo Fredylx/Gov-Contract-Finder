@@ -220,6 +220,69 @@ struct FilterChipV2: View {
     }
 }
 
+struct ActionConfirmationV2 {
+    let title: String
+    let message: String
+    let confirmLabel: String
+    var role: ButtonRole? = nil
+}
+
+struct ActionPillV2: View {
+    let title: String
+    let tint: Color
+    var icon: String? = nil
+    var confirmation: ActionConfirmationV2? = nil
+    let action: () -> Void
+
+    @State private var isShowingConfirmation = false
+
+    var body: some View {
+        if let confirmation {
+            buttonLabel
+                .alert(confirmation.title, isPresented: $isShowingConfirmation) {
+                    Button(confirmation.confirmLabel, role: confirmation.role) {
+                        action()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text(confirmation.message)
+                }
+        } else {
+            buttonLabel
+        }
+    }
+
+    private var buttonLabel: some View {
+        Button {
+            if confirmation != nil {
+                isShowingConfirmation = true
+            } else {
+                action()
+            }
+        } label: {
+            HStack(spacing: DesignTokensV2.Spacing.xs) {
+                if let icon {
+                    Image(systemName: icon)
+                }
+                Text(title)
+            }
+            .font(DesignTokensV2.Typography.caption)
+            .foregroundStyle(tint)
+            .padding(.horizontal, DesignTokensV2.Spacing.s)
+            .padding(.vertical, DesignTokensV2.Spacing.xs)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(tint.opacity(0.15))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(tint.opacity(0.45), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct ContactRowV2: View {
     let contact: Opportunity.Contact
 

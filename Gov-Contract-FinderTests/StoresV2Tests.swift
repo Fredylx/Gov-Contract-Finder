@@ -27,6 +27,47 @@ struct StoresV2Tests {
         #expect(reloaded.contains(opportunityID: "opp-1"))
     }
 
+    @Test func watchlistStoreRemoveAllClearsPersistedItems() {
+        let suiteName = "watchlist-remove-all-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let store = WatchlistStore(defaults: defaults)
+        let opportunities = [
+            Opportunity(
+                id: "opp-1",
+                title: "First Opportunity",
+                agency: "Agency",
+                postedDate: "03/01/2026",
+                description: "desc",
+                solicitationNumber: "SOL-1",
+                contacts: []
+            ),
+            Opportunity(
+                id: "opp-2",
+                title: "Second Opportunity",
+                agency: "Agency",
+                postedDate: "03/02/2026",
+                description: "desc",
+                solicitationNumber: "SOL-2",
+                contacts: []
+            )
+        ]
+
+        for opportunity in opportunities {
+            store.add(opportunity)
+        }
+
+        #expect(store.items.count == 2)
+
+        store.removeAll()
+
+        #expect(store.items.isEmpty)
+
+        let reloaded = WatchlistStore(defaults: defaults)
+        #expect(reloaded.items.isEmpty)
+    }
+
     @Test func alertsStoreMarkAllReadUpdatesUnreadCount() {
         let suiteName = "alerts-store-tests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

@@ -14,6 +14,7 @@
 
 ## Validation
 - [ ] Archive Release build (device)
+- [ ] If upload reports missing AdMob/UMP dSYMs, run: `scripts/fix_archive_google_dsyms.sh` on the archive, then re-upload
 - [ ] Validate archive in Xcode Organizer
 - [ ] TestFlight smoke test:
   - [ ] Search ad trigger does not block app flow

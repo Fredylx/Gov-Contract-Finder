@@ -32,6 +32,24 @@ struct WatchlistViewV2: View {
     }
 
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.m) {
+                headerCopy
+                Spacer(minLength: DesignTokensV2.Spacing.s)
+                bulkActions
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.s) {
+                headerCopy
+                HStack {
+                    Spacer()
+                    bulkActions
+                }
+            }
+        }
+    }
+
+    private var headerCopy: some View {
         VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
             Text("Pipeline")
                 .font(DesignTokensV2.Typography.hero)
@@ -39,6 +57,25 @@ struct WatchlistViewV2: View {
             Text("Drag opportunities between stages")
                 .font(DesignTokensV2.Typography.body)
                 .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+        }
+    }
+
+    @ViewBuilder
+    private var bulkActions: some View {
+        if !watchlistStore.items.isEmpty {
+            ActionPillV2(
+                title: "Remove All",
+                tint: DesignTokensV2.Colors.danger,
+                icon: "trash",
+                confirmation: ActionConfirmationV2(
+                    title: "Remove all bookmarks?",
+                    message: "This removes all saved opportunities from your watchlist. Workspace records and alerts stay untouched.",
+                    confirmLabel: "Remove All",
+                    role: .destructive
+                )
+            ) {
+                watchlistStore.removeAll()
+            }
         }
     }
 

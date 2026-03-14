@@ -17,6 +17,7 @@ struct RootView: View {
 private struct LegacyRootView: View {
     @State private var themeController = ThemeController()
     @State private var featureFlags = FeatureFlags.shared
+    @State private var tipJarStore = TipJarStore()
 
     var body: some View {
         TabView {
@@ -25,7 +26,7 @@ private struct LegacyRootView: View {
                     Label("Search", systemImage: "magnifyingglass")
                 }
 
-            SettingsView(themeController: themeController)
+            SettingsView(themeController: themeController, tipJarStore: tipJarStore)
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")
                 }

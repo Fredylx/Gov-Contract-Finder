@@ -1,3 +1,5 @@
 Config.debug.local.xcconfig
 Config.release.local.xcconfig
 build/
+__pycache__/
+*.pyc
