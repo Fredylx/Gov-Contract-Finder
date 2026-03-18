@@ -12,7 +12,5 @@
 	<false/>
 	<key>SAM_API_KEY</key>
 	<string>$(SAM_API_KEY)</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>We use permission to show more relevant ads and support free app features.</string>
 </dict>
 </plist>

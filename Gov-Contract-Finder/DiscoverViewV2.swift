@@ -298,42 +298,74 @@ final class DiscoverViewModelV2 {
 
 struct DiscoverViewV2: View {
     private static let viewedIDsStorageKey = "v2.discover.viewedOpportunityIDs"
+    private static let walkthroughSearchFieldID = "first-run-demo-search-field"
+    private static let walkthroughSearchCTAID = "first-run-demo-search-cta"
+    private static let walkthroughResultCardID = "first-run-demo-result-card"
 
     @State private var viewModel: DiscoverViewModelV2
     @State private var viewedOpportunityIDs: Set<String>
+    @State private var firstRunDemoTargetFrames: [FirstRunDemoTarget: CGRect] = [:]
+    @State private var featureFlags = FeatureFlags.shared
+    @State private var debugSettings = DebugSettings.shared
+    @FocusState private var isSearchFieldFocused: Bool
 
     @Bindable var watchlistStore: WatchlistStore
     @Bindable var alertsStore: AlertsStore
     @Bindable var workspaceStore: WorkspaceStore
+    @Bindable var firstRunDemoController: FirstRunDemoController
+    private let onDetailInterstitialShown: @MainActor () -> Void
 
     init(
         repository: OpportunityRepository = SAMOpportunityRepository(),
         watchlistStore: WatchlistStore,
         alertsStore: AlertsStore,
-        workspaceStore: WorkspaceStore
+        workspaceStore: WorkspaceStore,
+        firstRunDemoController: FirstRunDemoController,
+        onDetailInterstitialShown: @escaping @MainActor () -> Void = {}
     ) {
         _viewModel = State(initialValue: DiscoverViewModelV2(repository: repository))
         _viewedOpportunityIDs = State(initialValue: Set(UserDefaults.standard.stringArray(forKey: Self.viewedIDsStorageKey) ?? []))
         self.watchlistStore = watchlistStore
         self.alertsStore = alertsStore
         self.workspaceStore = workspaceStore
+        self.firstRunDemoController = firstRunDemoController
+        self.onDetailInterstitialShown = onDetailInterstitialShown
     }
 
     var body: some View {
-        SafeEdgeScrollColumn {
-            header
-            searchControlsCard
-            activeFilterSection
-            resultsSection
-        }
-        .background(CyberpunkBackgroundV2())
-        .navigationTitle("Discover")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: viewModel.opportunities.count)
-        }
-        .onChange(of: viewModel.opportunities.count) { _, count in
-            SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: count)
+        ScrollViewReader { proxy in
+            SafeEdgeScrollColumn {
+                header
+                searchControlsCard
+                activeFilterSection
+                resultsSection
+            }
+            .coordinateSpace(name: FirstRunDemoCoordinateSpace.name)
+            .background(CyberpunkBackgroundV2())
+            .navigationTitle("Discover")
+            .navigationBarTitleDisplayMode(.inline)
+            .overlay {
+                if shouldShowCoachMarks {
+                    FirstRunCoachMarksOverlayV2(
+                        step: firstRunDemoController.step,
+                        targetFrame: currentWalkthroughTargetFrame,
+                        onTargetTap: handleWalkthroughTargetTap
+                    )
+                }
+            }
+            .onAppear {
+                SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: viewModel.opportunities.count)
+                syncWalkthroughState(using: proxy)
+            }
+            .onChange(of: viewModel.opportunities.count) { _, count in
+                SearchAdsCoordinator.shared.preloadNativeAdsIfNeeded(resultCount: count)
+            }
+            .onChange(of: firstRunDemoController.step) { _, _ in
+                syncWalkthroughState(using: proxy)
+            }
+            .onPreferenceChange(FirstRunDemoTargetFramePreferenceKey.self) { frames in
+                firstRunDemoTargetFrames = frames
+            }
         }
     }
 
@@ -391,6 +423,7 @@ struct DiscoverViewV2: View {
                     TextField("Search keywords...", text: $viewModel.query)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
+                        .focused($isSearchFieldFocused)
                         .font(DesignTokensV2.Typography.body)
                         .foregroundStyle(DesignTokensV2.Colors.textPrimary)
 
@@ -408,6 +441,8 @@ struct DiscoverViewV2: View {
                     RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
                         .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
                 )
+                .id(Self.walkthroughSearchFieldID)
+                .firstRunDemoTarget(.searchField)
             }
 
             Button {
@@ -449,6 +484,8 @@ struct DiscoverViewV2: View {
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canSubmitSearch)
+            .id(Self.walkthroughSearchCTAID)
+            .firstRunDemoTarget(.searchCTA)
 
             Button {
                 withAnimation(DesignTokensV2.Animation.quick) {
@@ -544,7 +581,22 @@ struct DiscoverViewV2: View {
 
     @ViewBuilder
     private var resultsSection: some View {
-        if viewModel.hasSearched, let error = viewModel.errorMessage {
+        if shouldShowWalkthroughMockResult {
+            HStack {
+                BoundedBodyText(
+                    value: "1 opportunity shown",
+                    font: DesignTokensV2.Typography.caption
+                )
+                Spacer()
+            }
+
+            OpportunityCardV2(
+                opportunity: .walkthroughDemo,
+                isViewed: false
+            )
+            .id(Self.walkthroughResultCardID)
+            .firstRunDemoTarget(.resultCard)
+        } else if viewModel.hasSearched, let error = viewModel.errorMessage {
             NeoCard {
                 Text("Search Error")
                     .font(DesignTokensV2.Typography.section)
@@ -572,13 +624,6 @@ struct DiscoverViewV2: View {
                     Text("Ready to Search")
                         .font(DesignTokensV2.Typography.section)
                         .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-
-                    Text(OpportunityDetailTextFormatter.wrapUnsafeTokens("Use quick presets above or search with custom filters to discover federal opportunities."))
-                        .font(DesignTokensV2.Typography.body)
-                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DesignTokensV2.Spacing.m)
@@ -658,11 +703,12 @@ struct DiscoverViewV2: View {
 
     private func toggleSaved(_ opportunity: Opportunity) {
         let isNowSaved = watchlistStore.toggle(opportunity)
-        alertsStore.addAlert(
+        alertsStore.addAlertIfEnabled(
             type: .statusChange,
             title: isNowSaved ? "Added to Watchlist" : "Removed from Watchlist",
             message: opportunity.title,
-            opportunityID: opportunity.id
+            opportunityID: opportunity.id,
+            snapshot: SavedOpportunitySnapshot(opportunity: opportunity)
         )
         SearchAdsCoordinator.shared.triggerAfterUserAction("discover_toggle_saved")
     }
@@ -677,10 +723,79 @@ struct DiscoverViewV2: View {
         SearchAdsCoordinator.shared.preloadSearchInterstitial()
     }
 
+    private var currentWalkthroughTargetFrame: CGRect? {
+        guard let target = firstRunDemoController.activeTarget else { return nil }
+        return firstRunDemoTargetFrames[target]
+    }
+
+    private var shouldShowCoachMarks: Bool {
+        firstRunDemoController.isShowingCoachMarks
+        && (featureFlags.ccmWalkthroughEnabled || debugSettings.shouldShowSearchCoach)
+    }
+
+    private var shouldShowWalkthroughMockResult: Bool {
+        firstRunDemoController.step == .resultCard
+    }
+
+    private func handleWalkthroughTargetTap() {
+        switch firstRunDemoController.step {
+        case .searchField:
+            if viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                viewModel.query = FirstRunDemoController.demoKeyword
+            }
+            isSearchFieldFocused = true
+            firstRunDemoController.advanceFromSearchField()
+        case .searchCTA:
+            if viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                viewModel.query = FirstRunDemoController.demoKeyword
+            }
+            isSearchFieldFocused = false
+            firstRunDemoController.advanceFromSearchCTA()
+        case .resultCard:
+            isSearchFieldFocused = false
+            firstRunDemoController.complete()
+        case .intro, .completed, .skipped:
+            break
+        }
+    }
+
+    private func syncWalkthroughState(using proxy: ScrollViewProxy) {
+        switch firstRunDemoController.step {
+        case .intro, .completed, .skipped:
+            isSearchFieldFocused = false
+        case .searchField:
+            scrollToWalkthroughTarget(Self.walkthroughSearchFieldID, anchor: .top, using: proxy)
+        case .searchCTA:
+            if viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                viewModel.query = FirstRunDemoController.demoKeyword
+            }
+            scrollToWalkthroughTarget(Self.walkthroughSearchCTAID, anchor: .center, using: proxy)
+        case .resultCard:
+            if viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                viewModel.query = FirstRunDemoController.demoKeyword
+            }
+            isSearchFieldFocused = false
+            scrollToWalkthroughTarget(Self.walkthroughResultCardID, anchor: .center, using: proxy)
+        }
+    }
+
+    private func scrollToWalkthroughTarget(_ targetID: String, anchor: UnitPoint, using proxy: ScrollViewProxy) {
+        DispatchQueue.main.async {
+            withAnimation(DesignTokensV2.Animation.quick) {
+                proxy.scrollTo(targetID, anchor: anchor)
+            }
+        }
+    }
+
     private func handleOpportunityTap(opportunityID: String) {
         markViewed(opportunityID)
         Task {
-            _ = await SearchAdsCoordinator.shared.registerDetailOpenAndMaybeShowInterstitial()
+            let outcome = await SearchAdsCoordinator.shared.registerDetailOpenAndMaybeShowInterstitial()
+            if case .shown = outcome {
+                await MainActor.run {
+                    onDetailInterstitialShown()
+                }
+            }
         }
     }
 

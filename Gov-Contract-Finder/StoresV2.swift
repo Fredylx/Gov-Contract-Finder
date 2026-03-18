@@ -34,6 +34,7 @@ final class WatchlistStore {
             responseDate: opportunity.responseDate,
             status: .new,
             notes: "",
+            snapshot: SavedOpportunitySnapshot(opportunity: opportunity),
             createdAt: now,
             updatedAt: now
         )
@@ -118,17 +119,53 @@ final class AlertsStore {
         rules[index].enabled = enabled
     }
 
-    func addAlert(type: AlertType, title: String, message: String, opportunityID: String? = nil) {
+    func enabledRules(for type: AlertType) -> [AlertRule] {
+        rules.filter { $0.type == type && $0.enabled }
+    }
+
+    func isAnyRuleEnabled(for type: AlertType) -> Bool {
+        !enabledRules(for: type).isEmpty
+    }
+
+    @discardableResult
+    func addAlert(
+        type: AlertType,
+        title: String,
+        message: String,
+        opportunityID: String? = nil,
+        snapshot: SavedOpportunitySnapshot? = nil
+    ) -> AlertItem {
         let alert = AlertItem(
             id: UUID().uuidString,
             type: type,
             title: title,
             message: message,
             opportunityID: opportunityID,
+            snapshot: snapshot,
             createdAt: Date(),
             isRead: false
         )
         items.insert(alert, at: 0)
+        return alert
+    }
+
+    @discardableResult
+    func addAlertIfEnabled(
+        type: AlertType,
+        title: String,
+        message: String,
+        opportunityID: String? = nil,
+        snapshot: SavedOpportunitySnapshot? = nil
+    ) -> Bool {
+        guard isAnyRuleEnabled(for: type) else { return false }
+        addAlert(
+            type: type,
+            title: title,
+            message: message,
+            opportunityID: opportunityID,
+            snapshot: snapshot
+        )
+        return true
     }
 
     func markRead(_ id: String, isRead: Bool) {
@@ -142,13 +179,17 @@ final class AlertsStore {
         }
     }
 
+    func clearAll() {
+        items = []
+    }
+
     func delete(_ id: String) {
         items.removeAll { $0.id == id }
     }
 
     func reset() {
         rules = Self.defaultRules
-        items = []
+        clearAll()
     }
 
     private static var defaultRules: [AlertRule] {
@@ -197,15 +238,27 @@ final class WorkspaceStore {
         self.records = load() ?? []
     }
 
-    func record(for opportunityID: String, fallbackTitle: String) -> WorkspaceRecord {
-        if let found = records.first(where: { $0.opportunityID == opportunityID }) {
+    func record(for opportunity: Opportunity) -> WorkspaceRecord {
+        let snapshot = SavedOpportunitySnapshot(opportunity: opportunity)
+
+        if let found = records.first(where: { $0.opportunityID == opportunity.id }) {
+            var updated = found
+            updated.opportunityTitle = opportunity.title
+            updated.snapshot = snapshot
+
+            if updated != found {
+                upsert(updated)
+                return updated
+            }
+
             return found
         }
 
         let record = WorkspaceRecord(
             id: UUID().uuidString,
-            opportunityID: opportunityID,
-            opportunityTitle: fallbackTitle,
+            opportunityID: opportunity.id,
+            opportunityTitle: opportunity.title,
+            snapshot: snapshot,
             tasks: [],
             notes: [],
             documents: [],
@@ -222,6 +275,10 @@ final class WorkspaceStore {
         } else {
             records.insert(record, at: 0)
         }
+    }
+
+    func remove(recordID: String) {
+        records.removeAll { $0.id == recordID }
     }
 
     func reset() {

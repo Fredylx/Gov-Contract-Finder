@@ -10,6 +10,8 @@ final class FeatureFlags {
     private let darkModeToggleKey = "feature.darkModeToggle"
     private let v2ShellKey = "feature.v2Shell"
     private let searchAdsKey = "feature.searchAds"
+    private let ccmWalkthroughKey = "feature.ccmWalkthrough"
+    private let liveAlertsRefreshKey = "feature.liveAlertsRefresh"
 
     var naicsPresetsEnabled: Bool {
         get { UserDefaults.standard.object(forKey: naicsPresetsKey) as? Bool ?? true }
@@ -51,6 +53,30 @@ final class FeatureFlags {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: searchAdsKey)
+        }
+    }
+
+    var ccmWalkthroughEnabled: Bool {
+        get {
+            if let stored = UserDefaults.standard.object(forKey: ccmWalkthroughKey) as? Bool {
+                return stored
+            }
+            return false
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: ccmWalkthroughKey)
+        }
+    }
+
+    var liveAlertsRefreshEnabled: Bool {
+        get {
+            if let stored = UserDefaults.standard.object(forKey: liveAlertsRefreshKey) as? Bool {
+                return stored
+            }
+            return false
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: liveAlertsRefreshKey)
         }
     }
 }

@@ -13,11 +13,10 @@ struct SettingsViewV2: View {
     @Bindable var tipJarStore: TipJarStore
     @Bindable var adConsentManager: AdConsentManager
 
-    @Environment(\.openURL) private var openURL
-
     @State private var didReset = false
     @State private var isShowingSupportAd = false
     @State private var isShowingDonateAd = false
+    @State private var debugSettings = DebugSettings.shared
 
     var body: some View {
         SafeEdgeScrollColumn(maxContentWidth: 820) {
@@ -100,9 +99,6 @@ struct SettingsViewV2: View {
 
             BoundedBodyText(value: "Purpose:")
             BoundedBodyText(value: "Help small contractors and consulting teams find federal opportunities quickly and reach out to contracting contacts.", color: DesignTokensV2.Colors.textPrimary)
-
-            BoundedBodyText(value: "Data Source:")
-            BoundedBodyText(value: "SAM.gov API", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
         }
     }
 
@@ -142,42 +138,20 @@ struct SettingsViewV2: View {
                 .font(DesignTokensV2.Typography.section)
                 .foregroundStyle(DesignTokensV2.Colors.textPrimary)
 
-            BoundedBodyText(value: "Personalized ads may be more relevant. You can disable them any time.")
+            BoundedBodyText(value: "This app uses non-personalized ads only.")
+            BoundedBodyText(value: "Ads help support Gov Contract Hunter without tracking you across apps or websites.")
 
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    BoundedBodyText(value: "Personalized Ads", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
-                    BoundedBodyText(value: "Tracking status: \(adConsentManager.trackingStatusText)")
-                }
-                Spacer()
-                Toggle(
-                    "",
-                    isOn: Binding(
-                        get: { adConsentManager.personalizedAdsEnabled },
-                        set: { enabled in
-                            Task {
-                                await adConsentManager.setPersonalizedAdsEnabled(enabled)
-                            }
-                        }
-                    )
-                )
-                .labelsHidden()
-                .tint(DesignTokensV2.Colors.accentCyan)
-            }
-
-            Button {
-                Task {
-                    await adConsentManager.refreshPrivacyAndConsent()
-                    if let privacyPolicyURL {
-                        openURL(privacyPolicyURL)
+            HStack(spacing: DesignTokensV2.Spacing.xs) {
+                if let privacyPolicyURL {
+                    Link(destination: privacyPolicyURL) {
+                        Label("Open Privacy Policy", systemImage: "lock.shield")
+                            .font(DesignTokensV2.Typography.bodyStrong)
+                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
                     }
                 }
-            } label: {
-                Label("Privacy & Consent", systemImage: "hand.raised")
-                    .font(DesignTokensV2.Typography.bodyStrong)
-                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+
+                Spacer()
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -397,6 +371,32 @@ struct SettingsViewV2: View {
             ))
             .tint(DesignTokensV2.Colors.accentCyan)
             .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            Toggle("CCM Walkthrough Enabled", isOn: Binding(
+                get: { FeatureFlags.shared.ccmWalkthroughEnabled },
+                set: { FeatureFlags.shared.ccmWalkthroughEnabled = $0 }
+            ))
+            .tint(DesignTokensV2.Colors.accentCyan)
+            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            Toggle("Live Alerts Refresh", isOn: Binding(
+                get: { FeatureFlags.shared.liveAlertsRefreshEnabled },
+                set: { FeatureFlags.shared.liveAlertsRefreshEnabled = $0 }
+            ))
+            .tint(DesignTokensV2.Colors.accentCyan)
+            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            Toggle("Show Search Coach", isOn: $debugSettings.shouldShowSearchCoach)
+                .tint(DesignTokensV2.Colors.accentCyan)
+                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+
+            BoundedBodyText(value: "Data Source:", font: DesignTokensV2.Typography.caption)
+            BoundedBodyText(value: "SAM.gov API", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
+
+            BoundedBodyText(
+                value: "CCM Walkthrough Enabled gates the automatic first-run walkthrough. Show Search Coach still jumps to Discover and replays the coaching overlay, then switches itself off after the walkthrough finishes.",
+                font: DesignTokensV2.Typography.caption
+            )
         }
         #endif
     }

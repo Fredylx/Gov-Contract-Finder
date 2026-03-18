@@ -10,6 +10,8 @@
   - [ ] `com.fredy.lopez.govcontractfinder.tip.medium`
   - [ ] `com.fredy.lopez.govcontractfinder.tip.large`
 - [ ] Complete App Privacy questionnaire in App Store Connect
+  - [ ] Remove tracking declarations for the non-tracking ads build
+  - [ ] Reconfirm any AdMob/UMP data collection answers without marking tracking
 - [ ] Confirm Support URL and Privacy Policy URL in App Store Connect
 
 ## Validation
@@ -18,7 +20,8 @@
 - [ ] Validate archive in Xcode Organizer
 - [ ] TestFlight smoke test:
   - [ ] Search ad trigger does not block app flow
-  - [ ] ATT flow works as expected
+  - [ ] No ATT prompt appears on fresh install
+  - [ ] Ads remain non-personalized
   - [ ] Tip jar purchase success/cancel/pending
   - [ ] Release Settings does not show Local Data/Debug cards
 

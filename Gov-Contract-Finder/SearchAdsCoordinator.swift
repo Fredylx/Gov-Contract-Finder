@@ -9,6 +9,7 @@ import GoogleMobileAds
 enum SearchAdPresentationOutcome: Equatable {
     case shown
     case skippedDisabled
+    case skippedPerSearchGrace(remaining: Int)
     case skippedCooldown(remainingSeconds: Int)
     case skippedSessionCap(maxPerSession: Int)
     case skippedNotReady
@@ -21,6 +22,8 @@ enum SearchAdPresentationOutcome: Equatable {
             return "shown"
         case .skippedDisabled:
             return "skipped_disabled"
+        case .skippedPerSearchGrace(let remaining):
+            return "skipped_per_search_grace_\(remaining)"
         case .skippedCooldown(let remainingSeconds):
             return "skipped_cooldown_\(remainingSeconds)s"
         case .skippedSessionCap(let maxPerSession):
@@ -110,8 +113,8 @@ final class SearchAdsCoordinator: NSObject {
 
     private let nativeAdFrequency = 10
     private var detailOpensSinceLastInterstitial = 0
+    private var detailGraceRemainingAfterSearch = 0
     private var nextDetailInterstitialThreshold = Int.random(in: 3...5)
-    private var shouldPrioritizeNextDetailInterstitial = false
 
     private var hasInitialized = false
     private var isPreloading = false
@@ -191,7 +194,7 @@ final class SearchAdsCoordinator: NSObject {
     }
 
     func notifySearchCompleted() {
-        shouldPrioritizeNextDetailInterstitial = true
+        detailGraceRemainingAfterSearch = 2
         #if canImport(GoogleMobileAds)
         attemptedNativeSlots.removeAll()
         nativeSlotsQueued.removeAll()
@@ -231,20 +234,10 @@ final class SearchAdsCoordinator: NSObject {
 
         configureOnLaunchIfNeeded()
 
-        if shouldPrioritizeNextDetailInterstitial {
-            shouldPrioritizeNextDetailInterstitial = false
-            let prioritizedOutcome = await showInterstitialIfAllowed(
-                reason: "detail_open_post_search",
-                ignoreCooldown: false,
-                ignoreActionCadence: true,
-                ignoreSessionCap: false,
-                registerAction: false
-            )
-            if case .shown = prioritizedOutcome {
-                detailOpensSinceLastInterstitial = 0
-                nextDetailInterstitialThreshold = Int.random(in: 3...5)
-                return prioritizedOutcome
-            }
+        if detailGraceRemainingAfterSearch > 0 {
+            detailGraceRemainingAfterSearch -= 1
+            debugLog("detail open skipped by per-search grace remaining=\(detailGraceRemainingAfterSearch)")
+            return .skippedPerSearchGrace(remaining: detailGraceRemainingAfterSearch)
         }
 
         detailOpensSinceLastInterstitial += 1
@@ -408,15 +401,10 @@ final class SearchAdsCoordinator: NSObject {
     #if canImport(GoogleMobileAds)
     private func buildAdRequest() -> Request {
         let request = Request()
-
-        if AdConsentManager.shared.shouldUseNonPersonalizedAds {
-            let extras = Extras()
-            extras.additionalParameters = ["npa": "1"]
-            request.register(extras)
-            debugLog("using non-personalized ad request")
-        } else {
-            debugLog("using personalized ad request")
-        }
+        let extras = Extras()
+        extras.additionalParameters = ["npa": "1"]
+        request.register(extras)
+        debugLog("using non-personalized ad request")
 
         return request
     }
@@ -547,6 +535,34 @@ extension SearchAdsCoordinator: AdLoaderDelegate, NativeAdLoaderDelegate {
         currentNativeSlot = nil
         nativeAdLoader = nil
         loadNextNativeAdIfNeeded()
+    }
+}
+#endif
+
+#if DEBUG
+extension SearchAdsCoordinator {
+    func resetForTesting() {
+        detailOpensSinceLastInterstitial = 0
+        detailGraceRemainingAfterSearch = 0
+        nextDetailInterstitialThreshold = Int.random(in: 3...5)
+        hasInitialized = false
+        isPreloading = false
+        isPresenting = false
+        #if canImport(GoogleMobileAds)
+        interstitial = nil
+        nativeAdLoader = nil
+        isLoadingNativeAd = false
+        nativeLoadStartedAt = nil
+        currentNativeSlot = nil
+        nativeSlotsQueued.removeAll()
+        attemptedNativeSlots.removeAll()
+        nativeAdsBySlot.removeAll()
+        presentationContinuation = nil
+        #endif
+    }
+
+    func setDetailInterstitialThresholdForTesting(_ threshold: Int) {
+        nextDetailInterstitialThreshold = max(1, threshold)
     }
 }
 #endif

@@ -105,12 +105,13 @@ struct OpportunityDetailView: View {
                     systemImage: "briefcase",
                     accessibilityLabel: "Open Workspace"
                 ) {
-                    _ = workspaceStore.record(for: opportunity.id, fallbackTitle: opportunity.title)
-                    alertsStore.addAlert(
+                    _ = workspaceStore.record(for: opportunity)
+                    alertsStore.addAlertIfEnabled(
                         type: .statusChange,
                         title: "Workspace Opened",
                         message: opportunity.title,
-                        opportunityID: opportunity.id
+                        opportunityID: opportunity.id,
+                        snapshot: SavedOpportunitySnapshot(opportunity: opportunity)
                     )
                     SearchAdsCoordinator.shared.triggerAfterUserAction("detail_open_workspace")
                 }
@@ -434,11 +435,12 @@ struct OpportunityDetailView: View {
 
     private func toggleSavedState() {
         let isNowSaved = watchlistStore.toggle(opportunity)
-        alertsStore.addAlert(
+        alertsStore.addAlertIfEnabled(
             type: .statusChange,
             title: isNowSaved ? "Added to Watchlist" : "Removed from Watchlist",
             message: opportunity.title,
-            opportunityID: opportunity.id
+            opportunityID: opportunity.id,
+            snapshot: SavedOpportunitySnapshot(opportunity: opportunity)
         )
         SearchAdsCoordinator.shared.triggerAfterUserAction("detail_toggle_saved")
     }

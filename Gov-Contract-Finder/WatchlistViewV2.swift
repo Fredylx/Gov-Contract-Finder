@@ -190,11 +190,12 @@ struct WatchlistViewV2: View {
                     ForEach(WatchStatus.allCases) { status in
                         Button(status.title) {
                             watchlistStore.setStatus(opportunityID: item.opportunityID, status: status)
-                            alertsStore.addAlert(
+                            alertsStore.addAlertIfEnabled(
                                 type: .statusChange,
                                 title: "Watchlist Status Updated",
                                 message: "\(item.title) -> \(status.title)",
-                                opportunityID: item.opportunityID
+                                opportunityID: item.opportunityID,
+                                snapshot: item.resolvedSnapshot
                             )
                         }
                     }
@@ -280,29 +281,5 @@ struct WatchlistViewV2: View {
         case .submitted: return DesignTokensV2.Colors.success
         case .archived: return DesignTokensV2.Colors.textSecondary
         }
-    }
-}
-
-private extension WatchlistItem {
-    var asOpportunity: Opportunity {
-        Opportunity(
-            id: opportunityID,
-            title: title,
-            agency: agency,
-            postedDate: postedDate,
-            description: notes,
-            solicitationNumber: nil,
-            fullParentPathName: nil,
-            fullParentPathCode: nil,
-            office: nil,
-            uiLink: nil,
-            additionalInfoLink: nil,
-            resourceLinks: [],
-            responseDate: responseDate,
-            setAsideCode: nil,
-            naicsCode: nil,
-            naicsDescription: nil,
-            contacts: []
-        )
     }
 }

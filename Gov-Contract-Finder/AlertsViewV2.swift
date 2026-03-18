@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AlertsViewV2: View {
     @Bindable var alertsStore: AlertsStore
+    var lastCheckedAt: Date? = nil
+    var onOpenOpportunity: ((String) -> Void)? = nil
 
     var body: some View {
         SafeEdgeScrollColumn(maxContentWidth: 840) {
@@ -21,16 +23,36 @@ struct AlertsViewV2: View {
                     .font(DesignTokensV2.Typography.hero)
                     .foregroundStyle(DesignTokensV2.Colors.textPrimary)
                 Spacer()
-                if alertsStore.unreadCount > 0 {
-                    Button("Mark all read") {
-                        alertsStore.markAllRead()
+
+                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    if alertsStore.unreadCount > 0 {
+                        ActionPillV2(
+                            title: "Mark All Read",
+                            tint: DesignTokensV2.Colors.accentCyan
+                        ) {
+                            alertsStore.markAllRead()
+                        }
                     }
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+
+                    if !alertsStore.items.isEmpty {
+                        ActionPillV2(
+                            title: "Clear All",
+                            tint: DesignTokensV2.Colors.danger,
+                            confirmation: ActionConfirmationV2(
+                                title: "Clear all alerts?",
+                                message: "This removes every alert from your feed. Alert rules stay enabled.",
+                                confirmLabel: "Clear All",
+                                role: .destructive
+                            )
+                        ) {
+                            alertsStore.clearAll()
+                        }
+                    }
                 }
             }
 
             BoundedBodyText(value: "\(alertsStore.unreadCount) unread notifications")
+            BoundedBodyText(value: lastCheckedDescription, font: DesignTokensV2.Typography.caption)
         }
     }
 
@@ -63,6 +85,12 @@ struct AlertsViewV2: View {
                         Spacer()
 
                         BoundedBodyText(value: relativeDate(alert.createdAt), font: DesignTokensV2.Typography.caption)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard let opportunityID = alert.opportunityID else { return }
+                        alertsStore.markRead(alert.id, isRead: true)
+                        onOpenOpportunity?(opportunityID)
                     }
 
                     HStack(spacing: DesignTokensV2.Spacing.xs) {
@@ -211,5 +239,10 @@ struct AlertsViewV2: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private var lastCheckedDescription: String {
+        guard let lastCheckedAt else { return "Not checked yet" }
+        return "Last checked \(relativeDate(lastCheckedAt))"
     }
 }

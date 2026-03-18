@@ -60,6 +60,16 @@ struct WorkspaceViewV2: View {
                 selectedRecordID = workspaceStore.records.first?.id
             }
         }
+        .onChange(of: workspaceStore.records.map(\.id)) { _, recordIDs in
+            guard let selectedRecordID else {
+                self.selectedRecordID = recordIDs.first
+                return
+            }
+
+            if !recordIDs.contains(selectedRecordID) {
+                self.selectedRecordID = recordIDs.first
+            }
+        }
     }
 
     private var header: some View {
@@ -98,10 +108,32 @@ struct WorkspaceViewV2: View {
         let percent = Int(progress * 100)
 
         return NeoCard {
+            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.s) {
+                BoundedBodyText(
+                    value: record.opportunityTitle,
+                    font: DesignTokensV2.Typography.title,
+                    color: DesignTokensV2.Colors.textPrimary
+                )
+
+                Spacer()
+
+                ActionPillV2(
+                    title: "Remove From Workflow",
+                    tint: DesignTokensV2.Colors.danger,
+                    confirmation: ActionConfirmationV2(
+                        title: "Remove this contract?",
+                        message: "This removes the contract from your workspace workflow. Watchlist and alerts stay untouched.",
+                        confirmLabel: "Remove",
+                        role: .destructive
+                    )
+                ) {
+                    removeRecord(record)
+                }
+            }
+
             BoundedBodyText(
-                value: record.opportunityTitle,
-                font: DesignTokensV2.Typography.title,
-                color: DesignTokensV2.Colors.textPrimary
+                value: "Manage tasks, notes, documents, and activity for this contract.",
+                font: DesignTokensV2.Typography.caption
             )
 
             BoundedBodyText(value: "Completion Progress", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textSecondary)
@@ -471,6 +503,11 @@ struct WorkspaceViewV2: View {
         workspaceStore.upsert(updated)
         newDocName = ""
         newDocURL = ""
+    }
+
+    private func removeRecord(_ record: WorkspaceRecord) {
+        workspaceStore.remove(recordID: record.id)
+        selectedRecordID = workspaceStore.records.first?.id
     }
 
     private func relativeDate(_ date: Date) -> String {

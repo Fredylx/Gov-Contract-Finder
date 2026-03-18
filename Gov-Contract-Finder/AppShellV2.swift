@@ -35,6 +35,8 @@ enum AppRouteV2: Hashable {
 }
 
 struct RootViewV2: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var selectedTab: AppTabV2 = .discover
     @State private var discoverPath: [AppRouteV2] = []
     @State private var watchlistPath: [AppRouteV2] = []
@@ -48,6 +50,11 @@ struct RootViewV2: View {
     @State private var themeController = ThemeController()
     @State private var tipJarStore = TipJarStore()
     @State private var adConsentManager = AdConsentManager.shared
+    @State private var firstRunDemoController = FirstRunDemoController()
+    @State private var alertRefreshCoordinator = AlertRefreshCoordinator()
+    @State private var toastController = TransientToastControllerV2()
+    @State private var debugSettings = DebugSettings.shared
+    @State private var featureFlags = FeatureFlags.shared
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -62,8 +69,11 @@ struct RootViewV2: View {
                     DiscoverViewV2(
                         watchlistStore: watchlistStore,
                         alertsStore: alertsStore,
-                        workspaceStore: workspaceStore
-                    )
+                        workspaceStore: workspaceStore,
+                        firstRunDemoController: firstRunDemoController
+                    ) {
+                        toastController.show(text: "Thanks. Ads support Gov Contract Hunter.")
+                    }
                     .navigationDestination(for: AppRouteV2.self) { route in
                         routeDestination(route)
                     }
@@ -83,7 +93,12 @@ struct RootViewV2: View {
                 .tabVisibility(isActive: selectedTab == .watchlist)
 
                 NavigationStack(path: $alertsPath) {
-                    AlertsViewV2(alertsStore: alertsStore)
+                    AlertsViewV2(
+                        alertsStore: alertsStore,
+                        lastCheckedAt: alertRefreshCoordinator.lastSuccessfulRefreshAt
+                    ) { opportunityID in
+                        openAlertOpportunity(opportunityID)
+                    }
                         .navigationDestination(for: AppRouteV2.self) { route in
                             routeDestination(route)
                         }
@@ -115,11 +130,66 @@ struct RootViewV2: View {
             }
 
             CustomTabBarV2(selectedTab: $selectedTab)
+                .allowsHitTesting(!isWalkthroughBlockingUI)
+        }
+        .overlay {
+            if shouldShowIntroOverlay {
+                FirstRunDemoIntroOverlayV2 {
+                    startSearchCoach()
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let toast = toastController.currentToast {
+                TransientToastViewV2(message: toast.text)
+                    .padding(.bottom, 88)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .dismissKeyboardOnTap()
         .preferredColorScheme(themeController.preferenceV2.colorScheme)
+        .onAppear {
+            if shouldResumeAutomaticSearchCoach {
+                navigateToSearchCoach()
+            }
+
+            if debugSettings.shouldShowSearchCoach {
+                startSearchCoach()
+            }
+        }
+        .onChange(of: firstRunDemoController.step) { _, step in
+            if step.isLiveStep {
+                selectedTab = .discover
+                discoverPath.removeAll()
+                settingsPath.removeAll()
+            }
+
+            if step.isFinished && debugSettings.shouldShowSearchCoach {
+                debugSettings.shouldShowSearchCoach = false
+            }
+        }
+        .onChange(of: debugSettings.shouldShowSearchCoach) { _, shouldShowSearchCoach in
+            if shouldShowSearchCoach {
+                startSearchCoach()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            refreshAlertsIfNeeded()
+        }
+        .onChange(of: featureFlags.liveAlertsRefreshEnabled) { _, isEnabled in
+            guard isEnabled else { return }
+            refreshAlerts(force: true)
+        }
         .task {
             await adConsentManager.prepareOnLaunch()
+            if scenePhase == .active {
+                await alertRefreshCoordinator.handleAppDidBecomeActive(
+                    alertsStore: alertsStore,
+                    watchlistStore: watchlistStore,
+                    workspaceStore: workspaceStore
+                )
+            }
         }
     }
 
@@ -133,6 +203,60 @@ struct RootViewV2: View {
                 alertsStore: alertsStore,
                 workspaceStore: workspaceStore
             )
+        }
+    }
+
+    private func startSearchCoach() {
+        navigateToSearchCoach()
+        firstRunDemoController.startDemo()
+    }
+
+    private var shouldShowIntroOverlay: Bool {
+        featureFlags.ccmWalkthroughEnabled && firstRunDemoController.isShowingIntro
+    }
+
+    private var shouldResumeAutomaticSearchCoach: Bool {
+        featureFlags.ccmWalkthroughEnabled && firstRunDemoController.isShowingCoachMarks
+    }
+
+    private var isWalkthroughBlockingUI: Bool {
+        shouldShowIntroOverlay || shouldShowAutomaticCoachMarks || debugSettings.shouldShowSearchCoach
+    }
+
+    private var shouldShowAutomaticCoachMarks: Bool {
+        featureFlags.ccmWalkthroughEnabled && firstRunDemoController.isShowingCoachMarks
+    }
+
+    private func navigateToSearchCoach() {
+        selectedTab = .discover
+        discoverPath.removeAll()
+        settingsPath.removeAll()
+    }
+
+    private func openAlertOpportunity(_ opportunityID: String) {
+        selectedTab = .alerts
+        alertsPath = [.opportunity(id: opportunityID)]
+    }
+
+    private func refreshAlertsIfNeeded() {
+        refreshAlerts(force: false)
+    }
+
+    private func refreshAlerts(force: Bool) {
+        Task {
+            if force {
+                await alertRefreshCoordinator.refreshNow(
+                    alertsStore: alertsStore,
+                    watchlistStore: watchlistStore,
+                    workspaceStore: workspaceStore
+                )
+            } else {
+                await alertRefreshCoordinator.handleAppDidBecomeActive(
+                    alertsStore: alertsStore,
+                    watchlistStore: watchlistStore,
+                    workspaceStore: workspaceStore
+                )
+            }
         }
     }
 }
@@ -155,15 +279,42 @@ private struct OpportunityDeepLinkViewV2: View {
     let workspaceStore: WorkspaceStore
 
     var body: some View {
-        SafeEdgeScrollColumn {
-            NeoCard {
-                Text("Opportunity")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                BoundedBodyText(value: "Unable to resolve opportunity for id: \(id)")
+        Group {
+            if let opportunity = resolvedOpportunity {
+                OpportunityDetailView(
+                    opportunity: opportunity,
+                    watchlistStore: watchlistStore,
+                    alertsStore: alertsStore,
+                    workspaceStore: workspaceStore
+                )
+            } else {
+                SafeEdgeScrollColumn {
+                    NeoCard {
+                        Text("Opportunity")
+                            .font(DesignTokensV2.Typography.section)
+                            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        BoundedBodyText(value: "Unable to resolve opportunity for id: \(id)")
+                    }
+                }
+                .background(CyberpunkBackgroundV2())
             }
         }
-        .background(CyberpunkBackgroundV2())
+    }
+
+    private var resolvedOpportunity: Opportunity? {
+        if let alertOpportunity = alertsStore.items.first(where: { $0.opportunityID == id })?.asOpportunity {
+            return alertOpportunity
+        }
+
+        if let watchlistOpportunity = watchlistStore.items.first(where: { $0.opportunityID == id })?.asOpportunity {
+            return watchlistOpportunity
+        }
+
+        if let workspaceOpportunity = workspaceStore.records.first(where: { $0.opportunityID == id })?.snapshot?.asOpportunity {
+            return workspaceOpportunity
+        }
+
+        return nil
     }
 }
 

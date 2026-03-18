@@ -21,6 +21,133 @@ enum WatchStatus: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+struct SavedOpportunitySnapshot: Codable, Hashable {
+    struct SavedContact: Codable, Hashable {
+        let id: String
+        var type: String?
+        var title: String?
+        var fullName: String?
+        var email: String?
+        var phone: String?
+        var fax: String?
+
+        init(contact: Opportunity.Contact) {
+            id = contact.id
+            type = contact.type
+            title = contact.title
+            fullName = contact.fullName
+            email = contact.email
+            phone = contact.phone
+            fax = contact.fax
+        }
+
+        var asOpportunityContact: Opportunity.Contact {
+            Opportunity.Contact(
+                id: id,
+                type: type,
+                title: title,
+                fullName: fullName,
+                email: email,
+                phone: phone,
+                fax: fax
+            )
+        }
+    }
+
+    let id: String
+    var title: String
+    var agency: String?
+    var postedDate: String?
+    var description: String?
+    var solicitationNumber: String?
+    var fullParentPathName: String?
+    var fullParentPathCode: String?
+    var office: String?
+    var uiLink: String?
+    var additionalInfoLink: String?
+    var resourceLinks: [String]
+    var responseDate: String?
+    var setAsideCode: String?
+    var naicsCode: String?
+    var naicsDescription: String?
+    var contactEmail: String?
+    var contactName: String?
+    var contactPhone: String?
+    var contacts: [SavedContact]
+
+    init(opportunity: Opportunity) {
+        id = opportunity.id
+        title = opportunity.title
+        agency = opportunity.agency
+        postedDate = opportunity.postedDate
+        description = opportunity.description
+        solicitationNumber = opportunity.solicitationNumber
+        fullParentPathName = opportunity.fullParentPathName
+        fullParentPathCode = opportunity.fullParentPathCode
+        office = opportunity.office
+        uiLink = opportunity.uiLink
+        additionalInfoLink = opportunity.additionalInfoLink
+        resourceLinks = opportunity.resourceLinks ?? []
+        responseDate = opportunity.responseDate
+        setAsideCode = opportunity.setAsideCode
+        naicsCode = opportunity.naicsCode
+        naicsDescription = opportunity.naicsDescription
+        contactEmail = opportunity.contactEmail
+        contactName = opportunity.contactName
+        contactPhone = opportunity.contactPhone
+        contacts = opportunity.contacts.map { SavedContact(contact: $0) }
+    }
+
+    init(legacyWatchlistItem: WatchlistItem) {
+        id = legacyWatchlistItem.opportunityID
+        title = legacyWatchlistItem.title
+        agency = legacyWatchlistItem.agency
+        postedDate = legacyWatchlistItem.postedDate
+        let trimmedNotes = legacyWatchlistItem.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        description = trimmedNotes.isEmpty ? nil : trimmedNotes
+        solicitationNumber = nil
+        fullParentPathName = nil
+        fullParentPathCode = nil
+        office = nil
+        uiLink = nil
+        additionalInfoLink = nil
+        resourceLinks = []
+        responseDate = legacyWatchlistItem.responseDate
+        setAsideCode = nil
+        naicsCode = nil
+        naicsDescription = nil
+        contactEmail = nil
+        contactName = nil
+        contactPhone = nil
+        contacts = []
+    }
+
+    var asOpportunity: Opportunity {
+        Opportunity(
+            id: id,
+            title: title,
+            agency: agency,
+            postedDate: postedDate,
+            description: description,
+            solicitationNumber: solicitationNumber,
+            fullParentPathName: fullParentPathName,
+            fullParentPathCode: fullParentPathCode,
+            office: office,
+            uiLink: uiLink,
+            additionalInfoLink: additionalInfoLink,
+            resourceLinks: resourceLinks,
+            responseDate: responseDate,
+            setAsideCode: setAsideCode,
+            naicsCode: naicsCode,
+            naicsDescription: naicsDescription,
+            contactEmail: contactEmail,
+            contactName: contactName,
+            contactPhone: contactPhone,
+            contacts: contacts.map(\.asOpportunityContact)
+        )
+    }
+}
+
 struct WatchlistItem: Identifiable, Codable, Hashable {
     let id: String
     var opportunityID: String
@@ -30,6 +157,7 @@ struct WatchlistItem: Identifiable, Codable, Hashable {
     var responseDate: String?
     var status: WatchStatus
     var notes: String
+    var snapshot: SavedOpportunitySnapshot?
     var createdAt: Date
     var updatedAt: Date
 }
@@ -64,6 +192,7 @@ struct AlertItem: Identifiable, Codable, Hashable {
     var title: String
     var message: String
     var opportunityID: String?
+    var snapshot: SavedOpportunitySnapshot?
     var createdAt: Date
     var isRead: Bool
 }
@@ -99,6 +228,7 @@ struct WorkspaceRecord: Identifiable, Codable, Hashable {
     let id: String
     var opportunityID: String
     var opportunityTitle: String
+    var snapshot: SavedOpportunitySnapshot?
     var tasks: [WorkspaceTask]
     var notes: [WorkspaceNote]
     var documents: [WorkspaceDocument]
@@ -127,5 +257,21 @@ enum AppearanceModeV2: String, CaseIterable, Codable, Identifiable {
         case .light: return .light
         case .dark: return .dark
         }
+    }
+}
+
+extension WatchlistItem {
+    var resolvedSnapshot: SavedOpportunitySnapshot {
+        snapshot ?? SavedOpportunitySnapshot(legacyWatchlistItem: self)
+    }
+
+    var asOpportunity: Opportunity {
+        resolvedSnapshot.asOpportunity
+    }
+}
+
+extension AlertItem {
+    var asOpportunity: Opportunity? {
+        snapshot?.asOpportunity
     }
 }
