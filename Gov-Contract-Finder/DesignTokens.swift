@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-enum DesignTokensV2 {
+enum DesignTokens {
     enum Colors {
         static let bg900 = dynamic(light: "#F3F7FF", dark: "#050816")
         static let bg800 = dynamic(light: "#EAF1FF", dark: "#0B1026")
@@ -53,14 +53,14 @@ enum DesignTokensV2 {
     }
 }
 
-struct CyberpunkBackgroundV2: View {
+struct CyberpunkBackground: View {
     var body: some View {
         ZStack {
-            DesignTokensV2.Colors.bg900
+            DesignTokens.Colors.bg900
 
             RadialGradient(
                 colors: [
-                    DesignTokensV2.Colors.accentCyan.opacity(0.16),
+                    DesignTokens.Colors.accentCyan.opacity(0.16),
                     .clear
                 ],
                 center: .topLeading,
@@ -70,7 +70,7 @@ struct CyberpunkBackgroundV2: View {
 
             RadialGradient(
                 colors: [
-                    DesignTokensV2.Colors.accentMagenta.opacity(0.1),
+                    DesignTokens.Colors.accentMagenta.opacity(0.1),
                     .clear
                 ],
                 center: .bottomTrailing,
@@ -80,8 +80,8 @@ struct CyberpunkBackgroundV2: View {
 
             LinearGradient(
                 colors: [
-                    DesignTokensV2.Colors.bg900,
-                    DesignTokensV2.Colors.bg800
+                    DesignTokens.Colors.bg900,
+                    DesignTokens.Colors.bg800
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -92,7 +92,7 @@ struct CyberpunkBackgroundV2: View {
     }
 }
 
-private extension DesignTokensV2.Colors {
+private extension DesignTokens.Colors {
     static func dynamic(light: String, dark: String) -> Color {
         let lightColor = uiColor(hex: light)
         let darkColor = uiColor(hex: dark)

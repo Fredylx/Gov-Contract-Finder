@@ -1,9 +1,15 @@
 # Gov Contract Hunter Privacy Policy
 
-Last updated: March 17, 2026
+Last updated: March 18, 2026
 
-## Data sources
-- Opportunity search data is retrieved from SAM.gov.
+## Overview
+- Gov Contract Hunter does not create user accounts.
+- Gov Contract Hunter does not use App Tracking Transparency.
+- Gov Contract Hunter does not track users across third-party apps, websites, or services for advertising purposes.
+
+## Data sent when you use the app
+- Search requests you trigger in the app are sent to SAM.gov to retrieve opportunity results.
+- If ads are shown, Google AdMob may process limited device, diagnostic, and usage data needed to load non-personalized ads, prevent fraud, and measure ad delivery.
 
 ## Data stored on device
 - Watchlist items
@@ -15,6 +21,7 @@ Last updated: March 17, 2026
 - The app uses Google AdMob for in-app ads.
 - The app uses non-personalized ads only.
 - The app does not use App Tracking Transparency and does not track you across apps or websites for advertising purposes.
+- The app does not offer a personalized ads setting and does not request permission to track.
 
 ## Purchases
 - The app offers optional one-time tip purchases via Apple In-App Purchases.

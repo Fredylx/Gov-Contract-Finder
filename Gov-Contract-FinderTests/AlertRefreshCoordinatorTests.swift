@@ -147,10 +147,10 @@ private final class MockOpportunityRepository: OpportunityRepository {
         self.resultsByQuery = resultsByQuery
     }
 
-    func search(filters: OpportunitySearchFiltersV2, limit: Int, offset: Int) async throws -> OpportunitySearchPageV2 {
+    func search(filters: OpportunitySearchFilters, limit: Int, offset: Int) async throws -> OpportunitySearchPage {
         searchCallCount += 1
         let opportunities = Array((resultsByQuery[filters.query] ?? []).prefix(limit))
-        return OpportunitySearchPageV2(
+        return OpportunitySearchPage(
             opportunities: opportunities,
             totalRecords: opportunities.count
         )

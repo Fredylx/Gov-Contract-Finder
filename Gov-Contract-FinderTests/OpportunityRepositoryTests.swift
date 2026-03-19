@@ -79,7 +79,7 @@ struct OpportunityRepositoryTests {
         )
 
         let repository = SAMOpportunityRepository(client: mock)
-        let filters = OpportunitySearchFiltersV2(
+        let filters = OpportunitySearchFilters(
             query: "software",
             postedFrom: "01/01/2026",
             postedTo: "03/01/2026",

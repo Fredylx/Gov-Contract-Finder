@@ -39,7 +39,7 @@ struct OpportunityDetailView: View {
 
     var body: some View {
         ZStack {
-            CyberpunkBackgroundV2()
+            CyberpunkBackground()
 
             SafeEdgeScrollColumn {
                 headerCard
@@ -66,25 +66,25 @@ struct OpportunityDetailView: View {
         NeoCard {
             BoundedBodyText(
                 value: opportunity.title,
-                font: DesignTokensV2.Typography.title,
-                color: DesignTokensV2.Colors.textPrimary
+                font: DesignTokens.Typography.title,
+                color: DesignTokens.Colors.textPrimary
             )
 
             if let agency = opportunity.agency, !agency.isEmpty {
                 Label {
-                    BoundedBodyText(value: agency, font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textSecondary)
+                    BoundedBodyText(value: agency, font: DesignTokens.Typography.bodyStrong, color: DesignTokens.Colors.textSecondary)
                 } icon: {
                     Image(systemName: "building.2")
-                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                        .foregroundStyle(DesignTokens.Colors.textSecondary)
                 }
             }
 
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 if let solicitationNumber = opportunity.solicitationNumber, !solicitationNumber.isEmpty {
-                    BadgeV2(text: "Solicitation \(solicitationNumber)", color: DesignTokensV2.Colors.accentViolet)
+                    Badge(text: "Solicitation \(solicitationNumber)", color: DesignTokens.Colors.accentViolet)
                 }
                 if let responseDate = opportunity.responseDate, !responseDate.isEmpty {
-                    BadgeV2(text: "Due \(responseDate)", color: DesignTokensV2.Colors.warning)
+                    Badge(text: "Due \(responseDate)", color: DesignTokens.Colors.warning)
                 }
             }
 
@@ -92,7 +92,7 @@ struct OpportunityDetailView: View {
                 contactActions
             }
 
-            HStack(spacing: DesignTokensV2.Spacing.s) {
+            HStack(spacing: DesignTokens.Spacing.s) {
                 NeonIconButton(
                     systemImage: watchlistStore.contains(opportunityID: opportunity.id) ? "bookmark.fill" : "bookmark",
                     accessibilityLabel: watchlistStore.contains(opportunityID: opportunity.id) ? "Remove from Watchlist" : "Save to Watchlist",
@@ -120,11 +120,11 @@ struct OpportunityDetailView: View {
                     ShareLink(item: url) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                            .foregroundStyle(DesignTokens.Colors.accentCyan)
                             .frame(width: 44, height: 44)
                             .background(
-                                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                    .fill(DesignTokensV2.Colors.surface2)
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                    .fill(DesignTokens.Colors.surface2)
                             )
                     }
                     .accessibilityLabel("Share Opportunity")
@@ -176,7 +176,7 @@ struct OpportunityDetailView: View {
 
             if !opportunity.contacts.isEmpty {
                 ForEach(opportunity.contacts) { contact in
-                    ContactRowV2(contact: contact)
+                    ContactRow(contact: contact)
                 }
             } else if hasFallbackContact {
                 fallbackContactRows
@@ -188,7 +188,7 @@ struct OpportunityDetailView: View {
 
     @ViewBuilder
     private var contactActions: some View {
-        HStack(spacing: DesignTokensV2.Spacing.xs) {
+        HStack(spacing: DesignTokens.Spacing.xs) {
             if let emailAllURL = mailtoURL(
                 to: primaryEmail(from: opportunity.contacts),
                 cc: ccEmails(from: opportunity.contacts),
@@ -197,15 +197,15 @@ struct OpportunityDetailView: View {
             ) {
                 Link(destination: emailAllURL) {
                     Label("Email All", systemImage: "envelope")
-                        .font(DesignTokensV2.Typography.bodyStrong)
-                        .foregroundStyle(DesignTokensV2.Colors.bg900)
+                        .font(DesignTokens.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokens.Colors.bg900)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, DesignTokensV2.Spacing.s)
+                        .padding(.vertical, DesignTokens.Spacing.s)
                         .background(
-                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
                                 .fill(
                                     LinearGradient(
-                                        colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                        colors: [DesignTokens.Colors.accentCyan, DesignTokens.Colors.accentViolet],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
@@ -219,17 +219,17 @@ struct OpportunityDetailView: View {
                let telURL = URL(string: "tel://\(phone.filter(\.isNumber))") {
                 Link(destination: telURL) {
                     Label("Call", systemImage: "phone")
-                        .font(DesignTokensV2.Typography.bodyStrong)
-                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                        .font(DesignTokens.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokens.Colors.accentCyan)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, DesignTokensV2.Spacing.s)
+                        .padding(.vertical, DesignTokens.Spacing.s)
                         .background(
-                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                .fill(DesignTokensV2.Colors.surface2)
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                .fill(DesignTokens.Colors.surface2)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                .stroke(DesignTokensV2.Colors.accentCyan.opacity(0.55), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                .stroke(DesignTokens.Colors.accentCyan.opacity(0.55), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
@@ -256,11 +256,11 @@ struct OpportunityDetailView: View {
 
             if isLoadingDescription {
                 ProgressView("Loading description...")
-                    .tint(DesignTokensV2.Colors.accentCyan)
+                    .tint(DesignTokens.Colors.accentCyan)
             } else if let displayDescription = resolvedDescriptionText {
                 Text(OpportunityDetailTextFormatter.wrapUnsafeTokens(displayDescription))
-                    .font(DesignTokensV2.Typography.body)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
                     .multilineTextAlignment(.leading)
                     .lineLimit(isDescriptionExpanded ? nil : 10)
                     .fixedSize(horizontal: false, vertical: true)
@@ -269,13 +269,13 @@ struct OpportunityDetailView: View {
 
                 if shouldShowExpandButton(for: displayDescription) {
                     Button {
-                        withAnimation(DesignTokensV2.Animation.quick) {
+                        withAnimation(DesignTokens.Animation.quick) {
                             isDescriptionExpanded.toggle()
                         }
                     } label: {
                         Text(isDescriptionExpanded ? "Show Less" : "Show More")
-                            .font(DesignTokensV2.Typography.caption)
-                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                            .font(DesignTokens.Typography.caption)
+                            .foregroundStyle(DesignTokens.Colors.accentCyan)
                     }
                     .buttonStyle(.plain)
                 }
@@ -289,7 +289,7 @@ struct OpportunityDetailView: View {
                isLikelyURL(descriptionValue),
                let url = buildURL(descriptionValue, apiKey: apiKey) {
                 Link(destination: url) {
-                    BoundedBodyText(value: "Open Description URL", color: DesignTokensV2.Colors.accentCyan)
+                    BoundedBodyText(value: "Open Description URL", color: DesignTokens.Colors.accentCyan)
                 }
                 CopyLinkButton(label: "Copy Description URL", url: url, showCopied: $showCopied)
             }
@@ -304,38 +304,38 @@ struct OpportunityDetailView: View {
 
                 ForEach(resourceLinks, id: \.self) { link in
                     if let url = buildURL(link, apiKey: apiKey) {
-                        VStack(spacing: DesignTokensV2.Spacing.xs) {
+                        VStack(spacing: DesignTokens.Spacing.xs) {
                             Link(destination: url) {
-                                HStack(spacing: DesignTokensV2.Spacing.s) {
+                                HStack(spacing: DesignTokens.Spacing.s) {
                                     Image(systemName: "doc.text")
                                         .font(.system(size: 18, weight: .semibold))
-                                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                                        .foregroundStyle(DesignTokens.Colors.accentCyan)
 
                                     VStack(alignment: .leading, spacing: 2) {
                                         BoundedBodyText(
                                             value: linkLabel(for: url),
-                                            font: DesignTokensV2.Typography.bodyStrong,
-                                            color: DesignTokensV2.Colors.textPrimary
+                                            font: DesignTokens.Typography.bodyStrong,
+                                            color: DesignTokens.Colors.textPrimary
                                         )
                                         BoundedBodyText(
                                             value: url.pathExtension.isEmpty ? "FILE" : url.pathExtension.uppercased(),
-                                            font: DesignTokensV2.Typography.caption
+                                            font: DesignTokens.Typography.caption
                                         )
                                     }
 
                                     Spacer()
 
                                     Image(systemName: "arrow.down.to.line")
-                                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                                        .foregroundStyle(DesignTokens.Colors.accentCyan)
                                 }
-                                .padding(DesignTokensV2.Spacing.s)
+                                .padding(DesignTokens.Spacing.s)
                                 .background(
-                                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                        .fill(DesignTokensV2.Colors.surface2.opacity(0.45))
+                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                        .fill(DesignTokens.Colors.surface2.opacity(0.45))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                        .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                        .stroke(DesignTokens.Colors.border.opacity(0.8), lineWidth: 1)
                                 )
                             }
                             CopyLinkButton(label: "Copy", url: url, showCopied: $showCopied)
@@ -358,34 +358,34 @@ struct OpportunityDetailView: View {
                 if let samURL {
                     Link(destination: samURL) {
                         Label("View on SAM.gov", systemImage: "arrow.up.forward.square")
-                            .font(DesignTokensV2.Typography.section)
-                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                            .font(DesignTokens.Typography.section)
+                            .foregroundStyle(DesignTokens.Colors.accentCyan)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, DesignTokensV2.Spacing.xs)
+                            .padding(.vertical, DesignTokens.Spacing.xs)
                     }
                 }
 
                 if let infoURL {
                     Link(destination: infoURL) {
                         Label("Open Additional Info", systemImage: "doc.text.magnifyingglass")
-                            .font(DesignTokensV2.Typography.bodyStrong)
-                            .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                            .font(DesignTokens.Typography.bodyStrong)
+                            .foregroundStyle(DesignTokens.Colors.accentCyan)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, DesignTokensV2.Spacing.xs)
+                            .padding(.vertical, DesignTokens.Spacing.xs)
                     }
                 }
 
-                HStack(spacing: DesignTokensV2.Spacing.s) {
+                HStack(spacing: DesignTokens.Spacing.s) {
                     if let samURL {
                         ShareLink(item: samURL) {
                             Label("Share", systemImage: "square.and.arrow.up")
-                                .font(DesignTokensV2.Typography.bodyStrong)
-                                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                                .font(DesignTokens.Typography.bodyStrong)
+                                .foregroundStyle(DesignTokens.Colors.textPrimary)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, DesignTokensV2.Spacing.s)
+                                .padding(.vertical, DesignTokens.Spacing.s)
                                 .background(
-                                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                        .fill(DesignTokensV2.Colors.surface2.opacity(0.6))
+                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                        .fill(DesignTokens.Colors.surface2.opacity(0.6))
                                 )
                         }
                     }
@@ -400,18 +400,18 @@ struct OpportunityDetailView: View {
 
     @ViewBuilder
     private func detailRow(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
             Text(label)
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
-            BoundedBodyText(value: value, color: DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.caption)
+                .foregroundStyle(DesignTokens.Colors.textSecondary)
+            BoundedBodyText(value: value, color: DesignTokens.Colors.textPrimary)
         }
     }
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DesignTokensV2.Typography.section)
-            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            .font(DesignTokens.Typography.section)
+            .foregroundStyle(DesignTokens.Colors.textPrimary)
     }
 
     private var resolvedDescriptionText: String? {
@@ -597,17 +597,17 @@ private struct CopyLinkButton: View {
         }
         label: {
             Label(label, systemImage: "doc.on.doc")
-                .font(DesignTokensV2.Typography.bodyStrong)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.bodyStrong)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .padding(.vertical, DesignTokens.Spacing.s)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(DesignTokensV2.Colors.surface2.opacity(0.6))
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .fill(DesignTokens.Colors.surface2.opacity(0.6))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .stroke(DesignTokensV2.Colors.border.opacity(0.9), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .stroke(DesignTokens.Colors.border.opacity(0.9), lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)

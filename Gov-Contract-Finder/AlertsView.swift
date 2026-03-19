@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct AlertsViewV2: View {
+struct AlertsView: View {
     @Bindable var alertsStore: AlertsStore
     var lastCheckedAt: Date? = nil
     var onOpenOpportunity: ((String) -> Void)? = nil
@@ -11,34 +11,34 @@ struct AlertsViewV2: View {
             feedSection
             rulesSection
         }
-        .background(CyberpunkBackgroundV2())
+        .background(CyberpunkBackground())
         .navigationTitle("Alerts")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             HStack {
                 Text("Alerts")
-                    .font(DesignTokensV2.Typography.hero)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.hero)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
                 Spacer()
 
-                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                HStack(spacing: DesignTokens.Spacing.xs) {
                     if alertsStore.unreadCount > 0 {
-                        ActionPillV2(
+                        ActionPill(
                             title: "Mark All Read",
-                            tint: DesignTokensV2.Colors.accentCyan
+                            tint: DesignTokens.Colors.accentCyan
                         ) {
                             alertsStore.markAllRead()
                         }
                     }
 
                     if !alertsStore.items.isEmpty {
-                        ActionPillV2(
+                        ActionPill(
                             title: "Clear All",
-                            tint: DesignTokensV2.Colors.danger,
-                            confirmation: ActionConfirmationV2(
+                            tint: DesignTokens.Colors.danger,
+                            confirmation: ActionConfirmation(
                                 title: "Clear all alerts?",
                                 message: "This removes every alert from your feed. Alert rules stay enabled.",
                                 confirmLabel: "Clear All",
@@ -52,7 +52,7 @@ struct AlertsViewV2: View {
             }
 
             BoundedBodyText(value: "\(alertsStore.unreadCount) unread notifications")
-            BoundedBodyText(value: lastCheckedDescription, font: DesignTokensV2.Typography.caption)
+            BoundedBodyText(value: lastCheckedDescription, font: DesignTokens.Typography.caption)
         }
     }
 
@@ -61,30 +61,30 @@ struct AlertsViewV2: View {
         if alertsStore.items.isEmpty {
             NeoCard {
                 Text("No alerts yet")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
                 BoundedBodyText(value: "Enable rules and run Discover searches to populate this feed.")
             }
         } else {
             ForEach(alertsStore.items) { alert in
                 NeoCard {
-                    HStack(alignment: .top, spacing: DesignTokensV2.Spacing.xs) {
+                    HStack(alignment: .top, spacing: DesignTokens.Spacing.xs) {
                         Image(systemName: icon(for: alert.type))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(color(for: alert.type))
                             .frame(width: 20)
 
-                        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                             BoundedBodyText(
                                 value: alert.title,
-                                font: DesignTokensV2.Typography.bodyStrong,
-                                color: alert.isRead ? DesignTokensV2.Colors.textSecondary : DesignTokensV2.Colors.textPrimary
+                                font: DesignTokens.Typography.bodyStrong,
+                                color: alert.isRead ? DesignTokens.Colors.textSecondary : DesignTokens.Colors.textPrimary
                             )
                             BoundedBodyText(value: alert.message)
                         }
                         Spacer()
 
-                        BoundedBodyText(value: relativeDate(alert.createdAt), font: DesignTokensV2.Typography.caption)
+                        BoundedBodyText(value: relativeDate(alert.createdAt), font: DesignTokens.Typography.caption)
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -93,17 +93,17 @@ struct AlertsViewV2: View {
                         onOpenOpportunity?(opportunityID)
                     }
 
-                    HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        ActionPillV2(
+                    HStack(spacing: DesignTokens.Spacing.xs) {
+                        ActionPill(
                             title: alert.isRead ? "Mark Unread" : "Mark Read",
-                            tint: DesignTokensV2.Colors.success
+                            tint: DesignTokens.Colors.success
                         ) {
                             alertsStore.markRead(alert.id, isRead: !alert.isRead)
                         }
 
-                        ActionPillV2(
+                        ActionPill(
                             title: "Dismiss",
-                            tint: DesignTokensV2.Colors.danger
+                            tint: DesignTokens.Colors.danger
                         ) {
                             alertsStore.delete(alert.id)
                         }
@@ -119,8 +119,8 @@ struct AlertsViewV2: View {
         NeoCard {
             HStack {
                 Text("Alert Rules")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                 Spacer()
 
@@ -131,65 +131,65 @@ struct AlertsViewV2: View {
                         Image(systemName: "plus")
                         Text("New Rule")
                     }
-                    .font(DesignTokensV2.Typography.bodyStrong)
-                    .foregroundStyle(DesignTokensV2.Colors.bg900)
-                    .padding(.horizontal, DesignTokensV2.Spacing.s)
-                    .padding(.vertical, DesignTokensV2.Spacing.xs)
+                    .font(DesignTokens.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokens.Colors.bg900)
+                    .padding(.horizontal, DesignTokens.Spacing.s)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(DesignTokensV2.Colors.accentCyan)
+                            .fill(DesignTokens.Colors.accentCyan)
                     )
                 }
                 .buttonStyle(.plain)
             }
 
             ForEach(alertsStore.rules) { rule in
-                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     HStack {
                         BoundedBodyText(
                             value: ruleTitle(for: rule),
-                            font: DesignTokensV2.Typography.bodyStrong,
-                            color: DesignTokensV2.Colors.textPrimary
+                            font: DesignTokens.Typography.bodyStrong,
+                            color: DesignTokens.Colors.textPrimary
                         )
 
                         Spacer()
 
-                        BadgeV2(
+                        Badge(
                             text: rule.enabled ? "Active" : "Paused",
-                            color: rule.enabled ? DesignTokensV2.Colors.success : DesignTokensV2.Colors.textSecondary
+                            color: rule.enabled ? DesignTokens.Colors.success : DesignTokens.Colors.textSecondary
                         )
                     }
 
-                    HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        BadgeV2(text: rule.type.title.lowercased(), color: DesignTokensV2.Colors.accentCyan)
+                    HStack(spacing: DesignTokens.Spacing.xs) {
+                        Badge(text: rule.type.title.lowercased(), color: DesignTokens.Colors.accentCyan)
                         if !rule.keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            BadgeV2(text: rule.keyword.lowercased(), color: DesignTokensV2.Colors.accentViolet)
+                            Badge(text: rule.keyword.lowercased(), color: DesignTokens.Colors.accentViolet)
                         }
                     }
 
-                    HStack(spacing: DesignTokensV2.Spacing.xs) {
-                        ActionPillV2(
+                    HStack(spacing: DesignTokens.Spacing.xs) {
+                        ActionPill(
                             title: rule.enabled ? "Pause" : "Activate",
-                            tint: rule.enabled ? DesignTokensV2.Colors.warning : DesignTokensV2.Colors.success
+                            tint: rule.enabled ? DesignTokens.Colors.warning : DesignTokens.Colors.success
                         ) {
                             alertsStore.setRuleEnabled(id: rule.id, enabled: !rule.enabled)
                         }
 
-                        ActionPillV2(title: "Delete", tint: DesignTokensV2.Colors.danger) {
+                        ActionPill(title: "Delete", tint: DesignTokens.Colors.danger) {
                             alertsStore.rules.removeAll { $0.id == rule.id }
                         }
 
                         Spacer()
                     }
                 }
-                .padding(DesignTokensV2.Spacing.s)
+                .padding(DesignTokens.Spacing.s)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(DesignTokensV2.Colors.surface2.opacity(0.55))
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .fill(DesignTokens.Colors.surface2.opacity(0.55))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .stroke(DesignTokensV2.Colors.border.opacity(0.7), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .stroke(DesignTokens.Colors.border.opacity(0.7), lineWidth: 1)
                 )
             }
         }
@@ -221,9 +221,9 @@ struct AlertsViewV2: View {
 
     private func color(for type: AlertType) -> Color {
         switch type {
-        case .newOpportunity: return DesignTokensV2.Colors.accentCyan
-        case .deadline: return DesignTokensV2.Colors.warning
-        case .statusChange: return DesignTokensV2.Colors.accentViolet
+        case .newOpportunity: return DesignTokens.Colors.accentCyan
+        case .deadline: return DesignTokens.Colors.warning
+        case .statusChange: return DesignTokens.Colors.accentViolet
         }
     }
 

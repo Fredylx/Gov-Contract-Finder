@@ -3,12 +3,10 @@ import SwiftUI
 @main
 struct GovContractFinderApp: App {
     private let uiTestDetailLaunchArg = "-uiTest-openDetailFixture"
-    private let uiTestEnableV2Arg = "-uiTest-enableV2"
 
     var body: some Scene {
         WindowGroup {
             let arguments = ProcessInfo.processInfo.arguments
-            let _ = configureFeatureFlagsIfNeeded(arguments: arguments)
 
             Group {
                 if arguments.contains(uiTestDetailLaunchArg) {
@@ -25,12 +23,6 @@ struct GovContractFinderApp: App {
                 await AdConsentManager.shared.prepareOnLaunch()
                 SearchAdsCoordinator.shared.configureOnLaunchIfNeeded()
             }
-        }
-    }
-
-    private func configureFeatureFlagsIfNeeded(arguments: [String]) {
-        if arguments.contains(uiTestEnableV2Arg) {
-            FeatureFlags.shared.v2ShellEnabled = true
         }
     }
 }

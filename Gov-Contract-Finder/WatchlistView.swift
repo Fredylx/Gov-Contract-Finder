@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct WatchlistViewV2: View {
+struct WatchlistView: View {
     @Bindable var watchlistStore: WatchlistStore
     @Bindable var alertsStore: AlertsStore
     @Bindable var workspaceStore: WorkspaceStore
@@ -18,28 +18,28 @@ struct WatchlistViewV2: View {
             if watchlistStore.items.isEmpty {
                 NeoCard {
                     Text("No watchlist items")
-                        .font(DesignTokensV2.Typography.section)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .font(DesignTokens.Typography.section)
+                        .foregroundStyle(DesignTokens.Colors.textPrimary)
                     BoundedBodyText(value: "Save opportunities from Discover to start your pipeline.")
                 }
             } else {
                 pipelineBoard
             }
         }
-        .background(CyberpunkBackgroundV2())
+        .background(CyberpunkBackground())
         .navigationTitle("Watchlist")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.m) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.m) {
                 headerCopy
-                Spacer(minLength: DesignTokensV2.Spacing.s)
+                Spacer(minLength: DesignTokens.Spacing.s)
                 bulkActions
             }
 
-            VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.s) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
                 headerCopy
                 HStack {
                     Spacer()
@@ -50,24 +50,24 @@ struct WatchlistViewV2: View {
     }
 
     private var headerCopy: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text("Pipeline")
-                .font(DesignTokensV2.Typography.hero)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.hero)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
             Text("Drag opportunities between stages")
-                .font(DesignTokensV2.Typography.body)
-                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                .font(DesignTokens.Typography.body)
+                .foregroundStyle(DesignTokens.Colors.textSecondary)
         }
     }
 
     @ViewBuilder
     private var bulkActions: some View {
         if !watchlistStore.items.isEmpty {
-            ActionPillV2(
+            ActionPill(
                 title: "Remove All",
-                tint: DesignTokensV2.Colors.danger,
+                tint: DesignTokens.Colors.danger,
                 icon: "trash",
-                confirmation: ActionConfirmationV2(
+                confirmation: ActionConfirmation(
                     title: "Remove all bookmarks?",
                     message: "This removes all saved opportunities from your watchlist. Workspace records and alerts stay untouched.",
                     confirmLabel: "Remove All",
@@ -81,17 +81,17 @@ struct WatchlistViewV2: View {
 
     private var quickFilters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
-                FilterChipV2(title: "All", selected: selectedStatus == nil) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                FilterChip(title: "All", selected: selectedStatus == nil) {
                     selectedStatus = nil
                 }
-                FilterChipV2(title: "Due Soon", selected: dueSoonOnly) {
+                FilterChip(title: "Due Soon", selected: dueSoonOnly) {
                     dueSoonOnly.toggle()
                 }
-                FilterChipV2(title: "High Match", selected: highMatchOnly) {
+                FilterChip(title: "High Match", selected: highMatchOnly) {
                     highMatchOnly.toggle()
                 }
-                FilterChipV2(title: "Assigned to Me", selected: assignedToMeOnly) {
+                FilterChip(title: "Assigned to Me", selected: assignedToMeOnly) {
                     assignedToMeOnly.toggle()
                 }
             }
@@ -100,33 +100,33 @@ struct WatchlistViewV2: View {
 
     private var pipelineBoard: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.m) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.m) {
                 ForEach(visibleStatuses, id: \.self) { status in
                     statusColumn(status)
                 }
             }
-            .padding(.bottom, DesignTokensV2.Spacing.xs)
+            .padding(.bottom, DesignTokens.Spacing.xs)
         }
     }
 
     private func statusColumn(_ status: WatchStatus) -> some View {
         let items = filteredItems(for: status)
 
-        return VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.s) {
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+        return VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 Circle()
                     .fill(color(for: status))
                     .frame(width: 8, height: 8)
 
                 Text(status.title)
-                    .font(DesignTokensV2.Typography.bodyStrong)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                 Spacer()
 
                 Text("\(items.count)")
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
             }
 
             if items.isEmpty {
@@ -147,45 +147,45 @@ struct WatchlistViewV2: View {
                 }
             }
         }
-        .padding(DesignTokensV2.Spacing.m)
+        .padding(DesignTokens.Spacing.m)
         .frame(width: 304, alignment: .topLeading)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .fill(DesignTokensV2.Colors.surface.opacity(0.55))
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                .fill(DesignTokens.Colors.surface.opacity(0.55))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                .stroke(DesignTokens.Colors.border, lineWidth: 1)
         )
     }
 
     private func pipelineCard(_ item: WatchlistItem) -> some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text(OpportunityDetailTextFormatter.wrapUnsafeTokens(item.title))
-                .font(DesignTokensV2.Typography.bodyStrong)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.bodyStrong)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
                 .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 Image(systemName: "building.2")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
 
                 Text(OpportunityDetailTextFormatter.wrapUnsafeTokens(item.agency))
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
                     .lineLimit(1)
             }
 
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
-                BadgeV2(text: "\(matchPercent(for: item))% Match", color: DesignTokensV2.Colors.accentCyan)
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                Badge(text: "\(matchPercent(for: item))% Match", color: DesignTokens.Colors.accentCyan)
                 if let due = dueLabel(for: item) {
-                    BadgeV2(text: due, color: DesignTokensV2.Colors.warning)
+                    Badge(text: due, color: DesignTokens.Colors.warning)
                 }
             }
 
-            HStack(spacing: DesignTokensV2.Spacing.s) {
+            HStack(spacing: DesignTokens.Spacing.s) {
                 Menu {
                     ForEach(WatchStatus.allCases) { status in
                         Button(status.title) {
@@ -201,7 +201,7 @@ struct WatchlistViewV2: View {
                     }
                 } label: {
                     Text(item.status.title)
-                        .font(DesignTokensV2.Typography.caption)
+                        .font(DesignTokens.Typography.caption)
                         .foregroundStyle(color(for: item.status))
                 }
 
@@ -210,18 +210,18 @@ struct WatchlistViewV2: View {
                 Button("Dismiss") {
                     watchlistStore.remove(opportunityID: item.opportunityID)
                 }
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(DesignTokensV2.Colors.danger)
+                .font(DesignTokens.Typography.caption)
+                .foregroundStyle(DesignTokens.Colors.danger)
             }
         }
-        .padding(DesignTokensV2.Spacing.s)
+        .padding(DesignTokens.Spacing.s)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                .fill(DesignTokensV2.Colors.surface2.opacity(0.55))
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                .fill(DesignTokens.Colors.surface2.opacity(0.55))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                .stroke(DesignTokensV2.Colors.border.opacity(0.7), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                .stroke(DesignTokens.Colors.border.opacity(0.7), lineWidth: 1)
         )
     }
 
@@ -275,11 +275,11 @@ struct WatchlistViewV2: View {
 
     private func color(for status: WatchStatus) -> Color {
         switch status {
-        case .new: return DesignTokensV2.Colors.accentCyan
-        case .reviewing: return DesignTokensV2.Colors.accentViolet
-        case .pursuing: return DesignTokensV2.Colors.warning
-        case .submitted: return DesignTokensV2.Colors.success
-        case .archived: return DesignTokensV2.Colors.textSecondary
+        case .new: return DesignTokens.Colors.accentCyan
+        case .reviewing: return DesignTokens.Colors.accentViolet
+        case .pursuing: return DesignTokens.Colors.warning
+        case .submitted: return DesignTokens.Colors.success
+        case .archived: return DesignTokens.Colors.textSecondary
         }
     }
 }

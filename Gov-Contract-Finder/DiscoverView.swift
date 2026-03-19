@@ -7,7 +7,7 @@ import GoogleMobileAds
 
 @MainActor
 @Observable
-final class DiscoverViewModelV2 {
+final class DiscoverViewModel {
     enum SortOption: String, CaseIterable, Identifiable {
         case postedNewest
         case postedOldest
@@ -65,7 +65,7 @@ final class DiscoverViewModelV2 {
     private let repository: OpportunityRepository
     private let pageSize = 25
     private let searchCooldown: TimeInterval = 0.8
-    private let logger = Logger(subsystem: "Gov-Contract-Finder", category: "DiscoverViewModelV2")
+    private let logger = Logger(subsystem: "Gov-Contract-Finder", category: "DiscoverViewModel")
 
     private var lastSearchTapAt: Date = .distantPast
 
@@ -226,8 +226,8 @@ final class DiscoverViewModelV2 {
         }
     }
 
-    private var filters: OpportunitySearchFiltersV2 {
-        OpportunitySearchFiltersV2(
+    private var filters: OpportunitySearchFilters {
+        OpportunitySearchFilters(
             query: query.trimmingCharacters(in: .whitespacesAndNewlines),
             postedFrom: postedFrom.nilIfEmpty,
             postedTo: postedTo.nilIfEmpty,
@@ -296,13 +296,13 @@ final class DiscoverViewModelV2 {
     }
 }
 
-struct DiscoverViewV2: View {
+struct DiscoverView: View {
     private static let viewedIDsStorageKey = "v2.discover.viewedOpportunityIDs"
     private static let walkthroughSearchFieldID = "first-run-demo-search-field"
     private static let walkthroughSearchCTAID = "first-run-demo-search-cta"
     private static let walkthroughResultCardID = "first-run-demo-result-card"
 
-    @State private var viewModel: DiscoverViewModelV2
+    @State private var viewModel: DiscoverViewModel
     @State private var viewedOpportunityIDs: Set<String>
     @State private var firstRunDemoTargetFrames: [FirstRunDemoTarget: CGRect] = [:]
     @State private var featureFlags = FeatureFlags.shared
@@ -323,7 +323,7 @@ struct DiscoverViewV2: View {
         firstRunDemoController: FirstRunDemoController,
         onDetailInterstitialShown: @escaping @MainActor () -> Void = {}
     ) {
-        _viewModel = State(initialValue: DiscoverViewModelV2(repository: repository))
+        _viewModel = State(initialValue: DiscoverViewModel(repository: repository))
         _viewedOpportunityIDs = State(initialValue: Set(UserDefaults.standard.stringArray(forKey: Self.viewedIDsStorageKey) ?? []))
         self.watchlistStore = watchlistStore
         self.alertsStore = alertsStore
@@ -341,12 +341,12 @@ struct DiscoverViewV2: View {
                 resultsSection
             }
             .coordinateSpace(name: FirstRunDemoCoordinateSpace.name)
-            .background(CyberpunkBackgroundV2())
+            .background(CyberpunkBackground())
             .navigationTitle("Discover")
             .navigationBarTitleDisplayMode(.inline)
             .overlay {
                 if shouldShowCoachMarks {
-                    FirstRunCoachMarksOverlayV2(
+                    FirstRunCoachMarksOverlay(
                         step: firstRunDemoController.step,
                         targetFrame: currentWalkthroughTargetFrame,
                         onTargetTap: handleWalkthroughTargetTap
@@ -370,26 +370,26 @@ struct DiscoverViewV2: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text("Discover")
-                .font(DesignTokensV2.Typography.hero)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.hero)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
 
             Text("Find federal opportunities for your team.")
-                .font(DesignTokensV2.Typography.body)
-                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                .font(DesignTokens.Typography.body)
+                .foregroundStyle(DesignTokens.Colors.textSecondary)
         }
     }
 
     private var searchControlsCard: some View {
         NeoCard {
-            VStack(spacing: DesignTokensV2.Spacing.s) {
-                HStack(spacing: DesignTokensV2.Spacing.s) {
+            VStack(spacing: DesignTokens.Spacing.s) {
+                HStack(spacing: DesignTokens.Spacing.s) {
                     DiscoverPresetButton(
                         title: "Software",
                         icon: "laptopcomputer",
-                        startColor: DesignTokensV2.Colors.accentCyan,
-                        endColor: DesignTokensV2.Colors.accentViolet,
+                        startColor: DesignTokens.Colors.accentCyan,
+                        endColor: DesignTokens.Colors.accentViolet,
                         selected: isSoftwarePresetSelected
                     ) {
                         viewModel.applySoftwarePreset()
@@ -399,8 +399,8 @@ struct DiscoverViewV2: View {
                     DiscoverPresetButton(
                         title: "Small Cos",
                         icon: "building.2",
-                        startColor: DesignTokensV2.Colors.accentMagenta,
-                        endColor: DesignTokensV2.Colors.accentLime,
+                        startColor: DesignTokens.Colors.accentMagenta,
+                        endColor: DesignTokens.Colors.accentLime,
                         selected: isSmallCosPresetSelected
                     ) {
                         viewModel.applySmallCompanyPreset()
@@ -411,35 +411,35 @@ struct DiscoverViewV2: View {
                 DiscoverPresetButton(
                     title: "Software + Small Business",
                     icon: "bolt.fill",
-                    startColor: DesignTokensV2.Colors.accentViolet,
-                    endColor: DesignTokensV2.Colors.accentCyan,
+                    startColor: DesignTokens.Colors.accentViolet,
+                    endColor: DesignTokens.Colors.accentCyan,
                     selected: isSoftwareSmallPresetSelected
                 ) {
                     viewModel.applySoftwareSmallCompanyPreset()
                     SearchAdsCoordinator.shared.triggerAfterUserAction("discover_preset_software_small")
                 }
 
-                HStack(spacing: DesignTokensV2.Spacing.s) {
+                HStack(spacing: DesignTokens.Spacing.s) {
                     TextField("Search keywords...", text: $viewModel.query)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
                         .focused($isSearchFieldFocused)
-                        .font(DesignTokensV2.Typography.body)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                        .foregroundStyle(DesignTokens.Colors.accentCyan)
                 }
-                .padding(.horizontal, DesignTokensV2.Spacing.m)
-                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .padding(.horizontal, DesignTokens.Spacing.m)
+                .padding(.vertical, DesignTokens.Spacing.s)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(DesignTokensV2.Colors.bg800.opacity(0.8))
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .fill(DesignTokens.Colors.bg800.opacity(0.8))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .stroke(DesignTokens.Colors.border, lineWidth: 1)
                 )
                 .id(Self.walkthroughSearchFieldID)
                 .firstRunDemoTarget(.searchField)
@@ -448,37 +448,37 @@ struct DiscoverViewV2: View {
             Button {
                 Task { await runSearchFromCTA() }
             } label: {
-                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                HStack(spacing: DesignTokens.Spacing.xs) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .tint(DesignTokensV2.Colors.bg900)
+                            .tint(DesignTokens.Colors.bg900)
                     } else {
                         Image(systemName: "magnifyingglass")
                     }
                     Text(viewModel.isLoading ? "Searching..." : "Search Opportunities")
                 }
-                .font(DesignTokensV2.Typography.bodyStrong)
-                .foregroundStyle(DesignTokensV2.Colors.bg900)
+                .font(DesignTokens.Typography.bodyStrong)
+                .foregroundStyle(DesignTokens.Colors.bg900)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .padding(.vertical, DesignTokens.Spacing.s)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
                         .fill(
                             viewModel.canSubmitSearch
                             ? LinearGradient(
-                                colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                colors: [DesignTokens.Colors.accentCyan, DesignTokens.Colors.accentViolet],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                             : LinearGradient(
-                                colors: [DesignTokensV2.Colors.textSecondary.opacity(0.35), DesignTokensV2.Colors.textSecondary.opacity(0.35)],
+                                colors: [DesignTokens.Colors.textSecondary.opacity(0.35), DesignTokens.Colors.textSecondary.opacity(0.35)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                 )
                 .shadow(
-                    color: viewModel.canSubmitSearch ? DesignTokensV2.Colors.accentCyan.opacity(0.25) : .clear,
+                    color: viewModel.canSubmitSearch ? DesignTokens.Colors.accentCyan.opacity(0.25) : .clear,
                     radius: 14
                 )
             }
@@ -488,45 +488,45 @@ struct DiscoverViewV2: View {
             .firstRunDemoTarget(.searchCTA)
 
             Button {
-                withAnimation(DesignTokensV2.Animation.quick) {
+                withAnimation(DesignTokens.Animation.quick) {
                     viewModel.showAdvancedFilters.toggle()
                 }
                 SearchAdsCoordinator.shared.triggerAfterUserAction("discover_toggle_filters")
             } label: {
-                HStack(spacing: DesignTokensV2.Spacing.xs) {
+                HStack(spacing: DesignTokens.Spacing.xs) {
                     Image(systemName: "slider.horizontal.3")
                     Text("Filters")
                     Image(systemName: viewModel.showAdvancedFilters ? "chevron.up" : "chevron.down")
                     Spacer()
                 }
-                .font(DesignTokensV2.Typography.bodyStrong)
-                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                .font(DesignTokens.Typography.bodyStrong)
+                .foregroundStyle(DesignTokens.Colors.accentCyan)
             }
             .buttonStyle(.plain)
 
             if viewModel.showAdvancedFilters {
-                VStack(spacing: DesignTokensV2.Spacing.s) {
-                    InputFieldV2(title: "Agency", placeholder: "Department of Defense", text: $viewModel.agency)
-                    InputFieldV2(title: "NAICS Code", placeholder: "541519", text: $viewModel.naics, keyboardType: .numbersAndPunctuation)
+                VStack(spacing: DesignTokens.Spacing.s) {
+                    InputField(title: "Agency", placeholder: "Department of Defense", text: $viewModel.agency)
+                    InputField(title: "NAICS Code", placeholder: "541519", text: $viewModel.naics, keyboardType: .numbersAndPunctuation)
 
-                    HStack(spacing: DesignTokensV2.Spacing.s) {
-                        InputFieldV2(title: "Posted From", placeholder: "MM/dd/yyyy", text: $viewModel.postedFrom)
-                        InputFieldV2(title: "Posted To", placeholder: "MM/dd/yyyy", text: $viewModel.postedTo)
+                    HStack(spacing: DesignTokens.Spacing.s) {
+                        InputField(title: "Posted From", placeholder: "MM/dd/yyyy", text: $viewModel.postedFrom)
+                        InputField(title: "Posted To", placeholder: "MM/dd/yyyy", text: $viewModel.postedTo)
                     }
 
-                    InputFieldV2(title: "Notice Type", placeholder: "Solicitation", text: $viewModel.noticeType)
-                    InputFieldV2(title: "Set-Aside", placeholder: "SBA", text: $viewModel.setAsideCode)
+                    InputField(title: "Notice Type", placeholder: "Solicitation", text: $viewModel.noticeType)
+                    InputField(title: "Set-Aside", placeholder: "SBA", text: $viewModel.setAsideCode)
 
                     HStack {
                         Menu {
-                            ForEach(DiscoverViewModelV2.SortOption.allCases) { option in
+                            ForEach(DiscoverViewModel.SortOption.allCases) { option in
                                 Button(option.title) {
                                     viewModel.sortOption = option
                                     SearchAdsCoordinator.shared.triggerAfterUserAction("discover_sort_\(option.rawValue)")
                                 }
                             }
                         } label: {
-                            BadgeV2(text: viewModel.sortOption.title, color: DesignTokensV2.Colors.accentViolet)
+                            Badge(text: viewModel.sortOption.title, color: DesignTokens.Colors.accentViolet)
                         }
                         Spacer()
                     }
@@ -557,15 +557,15 @@ struct DiscoverViewV2: View {
             NeoCard {
                 HStack {
                     Text("Active Filters")
-                        .font(DesignTokensV2.Typography.caption)
-                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                        .font(DesignTokens.Typography.caption)
+                        .foregroundStyle(DesignTokens.Colors.textSecondary)
                     Spacer()
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DesignTokensV2.Spacing.xs) {
+                    HStack(spacing: DesignTokens.Spacing.xs) {
                         ForEach(viewModel.activeFilters) { filter in
-                            RemovableFilterChipV2(
+                            RemovableFilterChip(
                                 label: filter.label,
                                 value: filter.value
                             ) {
@@ -585,12 +585,12 @@ struct DiscoverViewV2: View {
             HStack {
                 BoundedBodyText(
                     value: "1 opportunity shown",
-                    font: DesignTokensV2.Typography.caption
+                    font: DesignTokens.Typography.caption
                 )
                 Spacer()
             }
 
-            OpportunityCardV2(
+            OpportunityCard(
                 opportunity: .walkthroughDemo,
                 isViewed: false
             )
@@ -599,52 +599,52 @@ struct DiscoverViewV2: View {
         } else if viewModel.hasSearched, let error = viewModel.errorMessage {
             NeoCard {
                 Text("Search Error")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.danger)
-                BoundedBodyText(value: error, color: DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.danger)
+                BoundedBodyText(value: error, color: DesignTokens.Colors.textPrimary)
             }
         } else if viewModel.isLoading {
             NeoCard {
                 ProgressView("Fetching opportunities...")
-                    .tint(DesignTokensV2.Colors.accentCyan)
-                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    .tint(DesignTokens.Colors.accentCyan)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
             }
         } else if !viewModel.hasSearched {
             NeoCard {
-                VStack(alignment: .center, spacing: DesignTokensV2.Spacing.s) {
+                VStack(alignment: .center, spacing: DesignTokens.Spacing.s) {
                     ZStack {
                         Circle()
-                            .fill(DesignTokensV2.Colors.surface2)
+                            .fill(DesignTokens.Colors.surface2)
                             .frame(width: 56, height: 56)
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                            .foregroundStyle(DesignTokens.Colors.textSecondary)
                     }
 
                     Text("Ready to Search")
-                        .font(DesignTokensV2.Typography.section)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .font(DesignTokens.Typography.section)
+                        .foregroundStyle(DesignTokens.Colors.textPrimary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignTokensV2.Spacing.m)
+                .padding(.vertical, DesignTokens.Spacing.m)
             }
         } else if viewModel.opportunities.isEmpty {
             NeoCard {
                 Text("No opportunities found")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
                 BoundedBodyText(value: "Try broadening your keywords or adjusting your filters.")
             }
         } else {
             HStack {
                 BoundedBodyText(
                     value: "\(viewModel.opportunities.count) opportunities shown",
-                    font: DesignTokensV2.Typography.caption
+                    font: DesignTokens.Typography.caption
                 )
                 Spacer()
             }
 
-            LazyVStack(spacing: DesignTokensV2.Spacing.s) {
+            LazyVStack(spacing: DesignTokens.Spacing.s) {
                 ForEach(Array(viewModel.opportunities.enumerated()), id: \.element.id) { index, opportunity in
                     let resultNumber = index + 1
                     ZStack(alignment: .topTrailing) {
@@ -656,7 +656,7 @@ struct DiscoverViewV2: View {
                                 workspaceStore: workspaceStore
                             )
                         } label: {
-                            OpportunityCardV2(
+                            OpportunityCard(
                                 opportunity: opportunity,
                                 isViewed: viewedOpportunityIDs.contains(opportunity.id)
                             )
@@ -676,17 +676,17 @@ struct DiscoverViewV2: View {
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(
                                     watchlistStore.contains(opportunityID: opportunity.id)
-                                    ? DesignTokensV2.Colors.accentLime
-                                    : DesignTokensV2.Colors.textSecondary
+                                    ? DesignTokens.Colors.accentLime
+                                    : DesignTokens.Colors.textSecondary
                                 )
                                 .frame(width: 36, height: 36)
                                 .background(
                                     Circle()
-                                        .fill(DesignTokensV2.Colors.surface2.opacity(0.8))
+                                        .fill(DesignTokens.Colors.surface2.opacity(0.8))
                                 )
                         }
                         .buttonStyle(.plain)
-                        .padding(DesignTokensV2.Spacing.s)
+                        .padding(DesignTokens.Spacing.s)
                     }
 
                     nativeAdRow(afterResultNumber: resultNumber)
@@ -694,8 +694,8 @@ struct DiscoverViewV2: View {
 
                 if viewModel.isLoadingMore {
                     ProgressView()
-                        .tint(DesignTokensV2.Colors.accentCyan)
-                        .padding(.top, DesignTokensV2.Spacing.s)
+                        .tint(DesignTokens.Colors.accentCyan)
+                        .padding(.top, DesignTokens.Spacing.s)
                 }
             }
         }
@@ -781,7 +781,7 @@ struct DiscoverViewV2: View {
 
     private func scrollToWalkthroughTarget(_ targetID: String, anchor: UnitPoint, using proxy: ScrollViewProxy) {
         DispatchQueue.main.async {
-            withAnimation(DesignTokensV2.Animation.quick) {
+            withAnimation(DesignTokens.Animation.quick) {
                 proxy.scrollTo(targetID, anchor: anchor)
             }
         }
@@ -809,7 +809,7 @@ struct DiscoverViewV2: View {
     private func nativeAdRow(afterResultNumber resultNumber: Int) -> some View {
         #if canImport(GoogleMobileAds)
         if let nativeAd = SearchAdsCoordinator.shared.nativeAd(afterResultNumber: resultNumber) {
-            DiscoverNativeAdCardV2(nativeAd: nativeAd)
+            DiscoverNativeAdCard(nativeAd: nativeAd)
         }
         #endif
     }
@@ -825,20 +825,20 @@ private struct DiscoverPresetButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 Image(systemName: icon)
                     .font(.system(size: 13, weight: .semibold))
                 Text(title)
-                    .font(DesignTokensV2.Typography.bodyStrong)
+                    .font(DesignTokens.Typography.bodyStrong)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
-            .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+            .foregroundStyle(DesignTokens.Colors.textPrimary)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, DesignTokensV2.Spacing.s)
-            .padding(.vertical, DesignTokensV2.Spacing.s)
+            .padding(.horizontal, DesignTokens.Spacing.s)
+            .padding(.vertical, DesignTokens.Spacing.s)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
@@ -851,8 +851,8 @@ private struct DiscoverPresetButton: View {
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                    .stroke((selected ? endColor : DesignTokensV2.Colors.border).opacity(0.85), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                    .stroke((selected ? endColor : DesignTokens.Colors.border).opacity(0.85), lineWidth: 1)
             )
             .shadow(
                 color: selected ? endColor.opacity(0.25) : .clear,
@@ -863,7 +863,7 @@ private struct DiscoverPresetButton: View {
     }
 }
 
-private struct OpportunityCardV2: View {
+private struct OpportunityCard: View {
     let opportunity: Opportunity
     let isViewed: Bool
 
@@ -871,97 +871,97 @@ private struct OpportunityCardV2: View {
         NeoCard {
             BoundedBodyText(
                 value: opportunity.title,
-                font: DesignTokensV2.Typography.section,
-                color: DesignTokensV2.Colors.textPrimary
+                font: DesignTokens.Typography.section,
+                color: DesignTokens.Colors.textPrimary
             )
 
             if let agency = opportunity.agency {
                 BoundedBodyText(value: agency)
             }
 
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 if let posted = opportunity.postedDate {
-                    BadgeV2(text: "Posted \(posted)", color: DesignTokensV2.Colors.accentCyan)
+                    Badge(text: "Posted \(posted)", color: DesignTokens.Colors.accentCyan)
                 }
                 if let due = opportunity.responseDate {
-                    BadgeV2(text: "Due \(due)", color: DesignTokensV2.Colors.warning)
+                    Badge(text: "Due \(due)", color: DesignTokens.Colors.warning)
                 }
                 if isViewed {
-                    BadgeV2(text: "Viewed", color: DesignTokensV2.Colors.textSecondary)
+                    Badge(text: "Viewed", color: DesignTokens.Colors.textSecondary)
                 }
             }
         }
     }
 }
 
-private struct RemovableFilterChipV2: View {
+private struct RemovableFilterChip: View {
     let label: String
     let value: String
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: DesignTokensV2.Spacing.xs) {
+        HStack(spacing: DesignTokens.Spacing.xs) {
             Text("\(label): \(value)")
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.caption)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
 
             Button {
                 onRemove()
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, DesignTokensV2.Spacing.s)
-        .padding(.vertical, DesignTokensV2.Spacing.xs)
+        .padding(.horizontal, DesignTokens.Spacing.s)
+        .padding(.vertical, DesignTokens.Spacing.xs)
         .background(
             Capsule(style: .continuous)
-                .fill(DesignTokensV2.Colors.surface2)
+                .fill(DesignTokens.Colors.surface2)
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                .stroke(DesignTokens.Colors.border, lineWidth: 1)
         )
     }
 }
 
 #if canImport(GoogleMobileAds)
-private struct DiscoverNativeAdCardV2: View {
+private struct DiscoverNativeAdCard: View {
     let nativeAd: NativeAd
 
     var body: some View {
         NeoCard {
             HStack {
                 Text("Sponsored")
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
                 Spacer()
                 Image(systemName: "megaphone.fill")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                    .foregroundStyle(DesignTokens.Colors.accentCyan)
             }
 
-            NativeAdRepresentableV2(nativeAd: nativeAd)
+            NativeAdRepresentable(nativeAd: nativeAd)
                 .frame(maxWidth: .infinity, minHeight: 108)
         }
     }
 }
 
-private struct NativeAdRepresentableV2: UIViewRepresentable {
+private struct NativeAdRepresentable: UIViewRepresentable {
     let nativeAd: NativeAd
 
-    func makeUIView(context: Context) -> NativeAdRenderedViewV2 {
-        NativeAdRenderedViewV2()
+    func makeUIView(context: Context) -> NativeAdRenderedView {
+        NativeAdRenderedView()
     }
 
-    func updateUIView(_ uiView: NativeAdRenderedViewV2, context: Context) {
+    func updateUIView(_ uiView: NativeAdRenderedView, context: Context) {
         uiView.apply(ad: nativeAd)
     }
 }
 
-private final class NativeAdRenderedViewV2: NativeAdView {
+private final class NativeAdRenderedView: NativeAdView {
     private let headlineLabel = UILabel()
     private let bodyLabel = UILabel()
     private let advertiserLabel = UILabel()
@@ -981,15 +981,15 @@ private final class NativeAdRenderedViewV2: NativeAdView {
         backgroundColor = .clear
 
         headlineLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        headlineLabel.textColor = UIColor(DesignTokensV2.Colors.textPrimary)
+        headlineLabel.textColor = UIColor(DesignTokens.Colors.textPrimary)
         headlineLabel.numberOfLines = 0
 
         advertiserLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        advertiserLabel.textColor = UIColor(DesignTokensV2.Colors.textSecondary)
+        advertiserLabel.textColor = UIColor(DesignTokens.Colors.textSecondary)
         advertiserLabel.numberOfLines = 1
 
         bodyLabel.font = .systemFont(ofSize: 14, weight: .regular)
-        bodyLabel.textColor = UIColor(DesignTokensV2.Colors.textSecondary)
+        bodyLabel.textColor = UIColor(DesignTokens.Colors.textSecondary)
         bodyLabel.numberOfLines = 3
 
         iconViewImage.contentMode = .scaleAspectFit
@@ -1002,8 +1002,8 @@ private final class NativeAdRenderedViewV2: NativeAdView {
         ])
 
         ctaButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-        ctaButton.setTitleColor(UIColor(DesignTokensV2.Colors.bg900), for: .normal)
-        ctaButton.backgroundColor = UIColor(DesignTokensV2.Colors.accentCyan)
+        ctaButton.setTitleColor(UIColor(DesignTokens.Colors.bg900), for: .normal)
+        ctaButton.backgroundColor = UIColor(DesignTokens.Colors.accentCyan)
         ctaButton.layer.cornerRadius = 10
         ctaButton.configuration = .plain()
         ctaButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)

@@ -9,9 +9,9 @@ struct SafeEdgeScrollColumn<Content: View>: View {
     private let content: () -> Content
 
     init(
-        spacing: CGFloat = DesignTokensV2.Spacing.m,
-        horizontalPadding: CGFloat = DesignTokensV2.Spacing.safeHorizontal,
-        bottomPadding: CGFloat = DesignTokensV2.Spacing.xxl + 70,
+        spacing: CGFloat = DesignTokens.Spacing.m,
+        horizontalPadding: CGFloat = DesignTokens.Spacing.safeHorizontal,
+        bottomPadding: CGFloat = DesignTokens.Spacing.xxl + 70,
         maxContentWidth: CGFloat = 760,
         @ViewBuilder content: @escaping () -> Content
     ) {
@@ -30,7 +30,7 @@ struct SafeEdgeScrollColumn<Content: View>: View {
             .frame(maxWidth: maxContentWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal, horizontalPadding)
-            .padding(.top, DesignTokensV2.Spacing.m)
+            .padding(.top, DesignTokens.Spacing.m)
             .padding(.bottom, bottomPadding)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -40,8 +40,8 @@ struct SafeEdgeScrollColumn<Content: View>: View {
 
 struct BoundedBodyText: View {
     let value: String
-    var font: Font = DesignTokensV2.Typography.body
-    var color: Color = DesignTokensV2.Colors.textSecondary
+    var font: Font = DesignTokens.Typography.body
+    var color: Color = DesignTokens.Colors.textSecondary
 
     var body: some View {
         Text(OpportunityDetailTextFormatter.wrapUnsafeTokens(value))
@@ -64,18 +64,18 @@ struct NeoCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.s) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
             content()
         }
-        .padding(DesignTokensV2.Spacing.m)
+        .padding(DesignTokens.Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            DesignTokensV2.Colors.surface.opacity(0.95),
-                            DesignTokensV2.Colors.bg800.opacity(0.9)
+                            DesignTokens.Colors.surface.opacity(0.95),
+                            DesignTokens.Colors.bg800.opacity(0.9)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -83,15 +83,15 @@ struct NeoCard<Content: View>: View {
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .stroke(DesignTokensV2.Colors.accentCyan.opacity(0.38), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                .stroke(DesignTokens.Colors.accentCyan.opacity(0.38), lineWidth: 1)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
                 .inset(by: 1)
-                .stroke(DesignTokensV2.Colors.border.opacity(0.55), lineWidth: 1)
+                .stroke(DesignTokens.Colors.border.opacity(0.55), lineWidth: 1)
         )
-        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.17), radius: 16, y: 6)
+        .shadow(color: DesignTokens.Colors.accentCyan.opacity(0.17), radius: 16, y: 6)
     }
 }
 
@@ -103,21 +103,21 @@ struct NeonButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 if let icon {
                     Image(systemName: icon)
                 }
                 Text(title)
             }
-            .font(DesignTokensV2.Typography.bodyStrong)
-            .foregroundStyle(DesignTokensV2.Colors.bg900)
+            .font(DesignTokens.Typography.bodyStrong)
+            .foregroundStyle(DesignTokens.Colors.bg900)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DesignTokensV2.Spacing.s)
+            .padding(.vertical, DesignTokens.Spacing.s)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                    .fill(enabled ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.textSecondary.opacity(0.4))
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                    .fill(enabled ? DesignTokens.Colors.accentCyan : DesignTokens.Colors.textSecondary.opacity(0.4))
             )
-            .shadow(color: enabled ? DesignTokensV2.Colors.accentCyan.opacity(0.25) : .clear, radius: 12)
+            .shadow(color: enabled ? DesignTokens.Colors.accentCyan.opacity(0.25) : .clear, radius: 12)
         }
         .disabled(!enabled)
     }
@@ -134,11 +134,11 @@ struct NeonIconButton: View {
         Button(role: role, action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(selected ? DesignTokensV2.Colors.bg900 : DesignTokensV2.Colors.accentCyan)
+                .foregroundStyle(selected ? DesignTokens.Colors.bg900 : DesignTokens.Colors.accentCyan)
                 .frame(width: 44, height: 44)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(selected ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.surface2)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .fill(selected ? DesignTokens.Colors.accentCyan : DesignTokens.Colors.surface2)
                 )
         }
         .accessibilityLabel(accessibilityLabel)
@@ -146,48 +146,48 @@ struct NeonIconButton: View {
     }
 }
 
-struct InputFieldV2: View {
+struct InputField: View {
     let title: String
     let placeholder: String
     @Binding var text: String
     var keyboardType: UIKeyboardType = .default
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text(title)
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                .font(DesignTokens.Typography.caption)
+                .foregroundStyle(DesignTokens.Colors.textSecondary)
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
-                .font(DesignTokensV2.Typography.body)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                .padding(.horizontal, DesignTokensV2.Spacing.s)
-                .padding(.vertical, DesignTokensV2.Spacing.s)
+                .font(DesignTokens.Typography.body)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
+                .padding(.horizontal, DesignTokens.Spacing.s)
+                .padding(.vertical, DesignTokens.Spacing.s)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(DesignTokensV2.Colors.bg800.opacity(0.7))
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .fill(DesignTokens.Colors.bg800.opacity(0.7))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .stroke(DesignTokens.Colors.border, lineWidth: 1)
                 )
         }
     }
 }
 
-struct BadgeV2: View {
+struct Badge: View {
     let text: String
     let color: Color
 
     var body: some View {
         Text(text)
-            .font(DesignTokensV2.Typography.caption)
+            .font(DesignTokens.Typography.caption)
             .foregroundStyle(color)
-            .padding(.horizontal, DesignTokensV2.Spacing.s)
-            .padding(.vertical, DesignTokensV2.Spacing.xs)
+            .padding(.horizontal, DesignTokens.Spacing.s)
+            .padding(.vertical, DesignTokens.Spacing.xs)
             .background(
                 Capsule(style: .continuous)
                     .fill(color.opacity(0.16))
@@ -199,7 +199,7 @@ struct BadgeV2: View {
     }
 }
 
-struct FilterChipV2: View {
+struct FilterChip: View {
     let title: String
     var selected: Bool
     let action: () -> Void
@@ -207,31 +207,31 @@ struct FilterChipV2: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(DesignTokensV2.Typography.caption)
-                .foregroundStyle(selected ? DesignTokensV2.Colors.bg900 : DesignTokensV2.Colors.textPrimary)
-                .padding(.horizontal, DesignTokensV2.Spacing.s)
-                .padding(.vertical, DesignTokensV2.Spacing.xs)
+                .font(DesignTokens.Typography.caption)
+                .foregroundStyle(selected ? DesignTokens.Colors.bg900 : DesignTokens.Colors.textPrimary)
+                .padding(.horizontal, DesignTokens.Spacing.s)
+                .padding(.vertical, DesignTokens.Spacing.xs)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(selected ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.surface2)
+                        .fill(selected ? DesignTokens.Colors.accentCyan : DesignTokens.Colors.surface2)
                 )
         }
         .buttonStyle(.plain)
     }
 }
 
-struct ActionConfirmationV2 {
+struct ActionConfirmation {
     let title: String
     let message: String
     let confirmLabel: String
     var role: ButtonRole? = nil
 }
 
-struct ActionPillV2: View {
+struct ActionPill: View {
     let title: String
     let tint: Color
     var icon: String? = nil
-    var confirmation: ActionConfirmationV2? = nil
+    var confirmation: ActionConfirmation? = nil
     let action: () -> Void
 
     @State private var isShowingConfirmation = false
@@ -260,16 +260,16 @@ struct ActionPillV2: View {
                 action()
             }
         } label: {
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 if let icon {
                     Image(systemName: icon)
                 }
                 Text(title)
             }
-            .font(DesignTokensV2.Typography.caption)
+            .font(DesignTokens.Typography.caption)
             .foregroundStyle(tint)
-            .padding(.horizontal, DesignTokensV2.Spacing.s)
-            .padding(.vertical, DesignTokensV2.Spacing.xs)
+            .padding(.horizontal, DesignTokens.Spacing.s)
+            .padding(.vertical, DesignTokens.Spacing.xs)
             .background(
                 Capsule(style: .continuous)
                     .fill(tint.opacity(0.15))
@@ -283,29 +283,29 @@ struct ActionPillV2: View {
     }
 }
 
-struct ContactRowV2: View {
+struct ContactRow: View {
     let contact: Opportunity.Contact
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
-            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.xs) {
                 if let name = contact.fullName, !name.isEmpty {
-                    BoundedBodyText(value: name, font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textPrimary)
+                    BoundedBodyText(value: name, font: DesignTokens.Typography.bodyStrong, color: DesignTokens.Colors.textPrimary)
                 }
                 Spacer(minLength: 8)
                 if let type = contact.type, !type.isEmpty {
                     Text(type.capitalized)
-                        .font(DesignTokensV2.Typography.caption)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                        .padding(.horizontal, DesignTokensV2.Spacing.xs)
+                        .font(DesignTokens.Typography.caption)
+                        .foregroundStyle(DesignTokens.Colors.textPrimary)
+                        .padding(.horizontal, DesignTokens.Spacing.xs)
                         .padding(.vertical, 3)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(DesignTokensV2.Colors.accentViolet.opacity(0.35))
+                                .fill(DesignTokens.Colors.accentViolet.opacity(0.35))
                         )
                         .overlay(
                             Capsule(style: .continuous)
-                                .stroke(DesignTokensV2.Colors.accentViolet.opacity(0.7), lineWidth: 1)
+                                .stroke(DesignTokens.Colors.accentViolet.opacity(0.7), lineWidth: 1)
                         )
                 }
             }
@@ -322,14 +322,14 @@ struct ContactRowV2: View {
                 BoundedBodyText(value: "Phone: \(phone)")
             }
         }
-        .padding(DesignTokensV2.Spacing.s)
+        .padding(DesignTokens.Spacing.s)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                .fill(DesignTokensV2.Colors.surface2.opacity(0.45))
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                .fill(DesignTokens.Colors.surface2.opacity(0.45))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                .stroke(DesignTokens.Colors.border.opacity(0.8), lineWidth: 1)
         )
     }
 }

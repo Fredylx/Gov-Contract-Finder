@@ -3,7 +3,7 @@ import Testing
 @testable import Gov_Contract_Finder
 
 @MainActor
-struct StoresV2Tests {
+struct StoresTests {
     @Test func watchlistStorePersistsSnapshotsAcrossInstances() {
         let suiteName = "watchlist-store-tests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

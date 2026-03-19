@@ -103,7 +103,7 @@ final class AlertRefreshCoordinator {
         }()
 
         for rule in enabledKeywordRules {
-            var filters = OpportunitySearchFiltersV2()
+            var filters = OpportunitySearchFilters()
             filters.query = rule.keyword.trimmingCharacters(in: .whitespacesAndNewlines)
             filters.postedFrom = postedFrom
             filters.postedTo = postedTo

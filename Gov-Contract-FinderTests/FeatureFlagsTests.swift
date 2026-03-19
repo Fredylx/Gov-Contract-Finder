@@ -13,24 +13,20 @@ struct FeatureFlagsTests {
     @Test func togglesPersistValues() {
         let flags = FeatureFlags.shared
 
-        let originalNAICS = flags.naicsPresetsEnabled
-        let originalSort = flags.sortControlEnabled
-        let originalDark = flags.darkModeToggleEnabled
-        let originalV2 = flags.v2ShellEnabled
+        let originalSearchAds = flags.searchAdsEnabled
+        let originalWalkthrough = flags.ccmWalkthroughEnabled
+        let originalLiveAlerts = flags.liveAlertsRefreshEnabled
 
-        flags.naicsPresetsEnabled = false
-        flags.sortControlEnabled = false
-        flags.darkModeToggleEnabled = false
-        flags.v2ShellEnabled = false
+        flags.searchAdsEnabled = false
+        flags.ccmWalkthroughEnabled = true
+        flags.liveAlertsRefreshEnabled = true
 
-        #expect(flags.naicsPresetsEnabled == false)
-        #expect(flags.sortControlEnabled == false)
-        #expect(flags.darkModeToggleEnabled == false)
-        #expect(flags.v2ShellEnabled == false)
+        #expect(flags.searchAdsEnabled == false)
+        #expect(flags.ccmWalkthroughEnabled == true)
+        #expect(flags.liveAlertsRefreshEnabled == true)
 
-        flags.naicsPresetsEnabled = originalNAICS
-        flags.sortControlEnabled = originalSort
-        flags.darkModeToggleEnabled = originalDark
-        flags.v2ShellEnabled = originalV2
+        flags.searchAdsEnabled = originalSearchAds
+        flags.ccmWalkthroughEnabled = originalWalkthrough
+        flags.liveAlertsRefreshEnabled = originalLiveAlerts
     }
 }

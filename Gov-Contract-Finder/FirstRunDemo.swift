@@ -170,7 +170,7 @@ extension View {
     }
 }
 
-struct FirstRunDemoIntroOverlayV2: View {
+struct FirstRunDemoIntroOverlay: View {
     let onStart: () -> Void
 
     var body: some View {
@@ -178,19 +178,19 @@ struct FirstRunDemoIntroOverlayV2: View {
             Color.black.opacity(0.82)
                 .ignoresSafeArea()
 
-            VStack(spacing: DesignTokensV2.Spacing.l) {
-                Spacer(minLength: DesignTokensV2.Spacing.xxl)
+            VStack(spacing: DesignTokens.Spacing.l) {
+                Spacer(minLength: DesignTokens.Spacing.xxl)
 
-                FirstRunDemoPreviewCardV2()
+                FirstRunDemoPreviewCard()
 
                 NeoCard {
                     Text("Find your first contract fast")
-                        .font(DesignTokensV2.Typography.hero)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .font(DesignTokens.Typography.hero)
+                        .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                     BoundedBodyText(
                         value: "We’ll show you the three actions that matter in Discover.",
-                        color: DesignTokensV2.Colors.textPrimary
+                        color: DesignTokens.Colors.textPrimary
                     )
 
                     NeonButton(title: "Start Demo", icon: "sparkles") {
@@ -201,8 +201,8 @@ struct FirstRunDemoIntroOverlayV2: View {
 
                 Spacer()
             }
-            .padding(.horizontal, DesignTokensV2.Spacing.l)
-            .padding(.vertical, DesignTokensV2.Spacing.xl)
+            .padding(.horizontal, DesignTokens.Spacing.l)
+            .padding(.vertical, DesignTokens.Spacing.xl)
 
             Color.clear
                 .contentShape(Rectangle())
@@ -214,7 +214,7 @@ struct FirstRunDemoIntroOverlayV2: View {
     }
 }
 
-struct FirstRunCoachMarksOverlayV2: View {
+struct FirstRunCoachMarksOverlay: View {
     let step: FirstRunDemoStep
     let targetFrame: CGRect?
     let onTargetTap: () -> Void
@@ -238,7 +238,7 @@ struct FirstRunCoachMarksOverlayV2: View {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .stroke(
                             LinearGradient(
-                                colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                colors: [DesignTokens.Colors.accentCyan, DesignTokens.Colors.accentViolet],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             ),
@@ -246,12 +246,12 @@ struct FirstRunCoachMarksOverlayV2: View {
                         )
                         .frame(width: highlightFrame.width, height: highlightFrame.height)
                         .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.35), radius: 16)
+                        .shadow(color: DesignTokens.Colors.accentCyan.opacity(0.35), radius: 16)
                 }
 
                 if let highlightFrame {
-                    FirstRunCoachMarkCardV2(title: step.title, message: step.message)
-                        .frame(width: min(overlayFrame.width - (DesignTokensV2.Spacing.l * 2), 320))
+                    FirstRunCoachMarkCard(title: step.title, message: step.message)
+                        .frame(width: min(overlayFrame.width - (DesignTokens.Spacing.l * 2), 320))
                         .position(calloutPosition(in: overlayFrame, for: highlightFrame))
                 }
 
@@ -272,7 +272,7 @@ struct FirstRunCoachMarksOverlayV2: View {
     }
 
     private func calloutPosition(in overlayFrame: CGRect, for highlightFrame: CGRect) -> CGPoint {
-        let horizontalPadding = DesignTokensV2.Spacing.l
+        let horizontalPadding = DesignTokens.Spacing.l
         let bubbleWidth = min(overlayFrame.width - (horizontalPadding * 2), 320)
         let halfBubbleWidth = bubbleWidth / 2
         let clampedX = min(
@@ -291,28 +291,28 @@ struct FirstRunCoachMarksOverlayV2: View {
     }
 }
 
-private struct FirstRunCoachMarkCardV2: View {
+private struct FirstRunCoachMarkCard: View {
     let title: String
     let message: String
 
     var bodyView: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text(title)
-                .font(DesignTokensV2.Typography.section)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.section)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
 
-            BoundedBodyText(value: message, color: DesignTokensV2.Colors.textPrimary)
+            BoundedBodyText(value: message, color: DesignTokens.Colors.textPrimary)
         }
-        .padding(DesignTokensV2.Spacing.m)
+        .padding(DesignTokens.Spacing.m)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .fill(DesignTokensV2.Colors.bg800.opacity(0.95))
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                .fill(DesignTokens.Colors.bg800.opacity(0.95))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                .stroke(DesignTokensV2.Colors.accentCyan.opacity(0.45), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                .stroke(DesignTokens.Colors.accentCyan.opacity(0.45), lineWidth: 1)
         )
-        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.22), radius: 18)
+        .shadow(color: DesignTokens.Colors.accentCyan.opacity(0.22), radius: 18)
     }
 
     var body: some View {
@@ -320,87 +320,87 @@ private struct FirstRunCoachMarkCardV2: View {
     }
 }
 
-private struct FirstRunDemoPreviewCardV2: View {
+private struct FirstRunDemoPreviewCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.m) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
             HStack {
                 Text("Gov Contract Hunter")
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Colors.accentCyan)
                 Spacer()
             }
 
-            VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                 Text("Discover")
-                    .font(DesignTokensV2.Typography.hero)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.hero)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                 BoundedBodyText(value: "Find federal opportunities for your team.")
             }
 
-            VStack(spacing: DesignTokensV2.Spacing.s) {
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                    .fill(DesignTokensV2.Colors.surface2)
+            VStack(spacing: DesignTokens.Spacing.s) {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                    .fill(DesignTokens.Colors.surface2)
                     .frame(height: 46)
                     .overlay(alignment: .leading) {
                         Text("Search keywords...")
-                            .font(DesignTokensV2.Typography.body)
-                            .foregroundStyle(DesignTokensV2.Colors.textSecondary)
-                            .padding(.horizontal, DesignTokensV2.Spacing.m)
+                            .font(DesignTokens.Typography.body)
+                            .foregroundStyle(DesignTokens.Colors.textSecondary)
+                            .padding(.horizontal, DesignTokens.Spacing.m)
                     }
 
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                            colors: [DesignTokens.Colors.accentCyan, DesignTokens.Colors.accentViolet],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
                     .frame(height: 50)
                     .overlay {
-                        HStack(spacing: DesignTokensV2.Spacing.xs) {
+                        HStack(spacing: DesignTokens.Spacing.xs) {
                             Image(systemName: "magnifyingglass")
                             Text("Search Opportunities")
                         }
-                        .font(DesignTokensV2.Typography.bodyStrong)
-                        .foregroundStyle(DesignTokensV2.Colors.bg900)
+                        .font(DesignTokens.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokens.Colors.bg900)
                     }
             }
 
-            VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.s) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
                 Text("Cloud Migration Support Services")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                 BoundedBodyText(value: "Department of Energy")
 
-                HStack(spacing: DesignTokensV2.Spacing.xs) {
-                    BadgeV2(text: "Posted 03/12/2026", color: DesignTokensV2.Colors.accentCyan)
-                    BadgeV2(text: "Viewed", color: DesignTokensV2.Colors.textSecondary)
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    Badge(text: "Posted 03/12/2026", color: DesignTokens.Colors.accentCyan)
+                    Badge(text: "Viewed", color: DesignTokens.Colors.textSecondary)
                 }
             }
-            .padding(DesignTokensV2.Spacing.m)
+            .padding(DesignTokens.Spacing.m)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                    .fill(DesignTokensV2.Colors.surface.opacity(0.9))
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                    .fill(DesignTokens.Colors.surface.opacity(0.9))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.card, style: .continuous)
-                    .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.card, style: .continuous)
+                    .stroke(DesignTokens.Colors.border, lineWidth: 1)
             )
         }
-        .padding(DesignTokensV2.Spacing.l)
+        .padding(DesignTokens.Spacing.l)
         .frame(maxWidth: 420)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(DesignTokensV2.Colors.bg900.opacity(0.96))
+                .fill(DesignTokens.Colors.bg900.opacity(0.96))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(DesignTokensV2.Colors.accentCyan.opacity(0.4), lineWidth: 1)
+                .stroke(DesignTokens.Colors.accentCyan.opacity(0.4), lineWidth: 1)
         )
-        .shadow(color: DesignTokensV2.Colors.accentCyan.opacity(0.18), radius: 18, y: 10)
+        .shadow(color: DesignTokens.Colors.accentCyan.opacity(0.18), radius: 18, y: 10)
     }
 }
 

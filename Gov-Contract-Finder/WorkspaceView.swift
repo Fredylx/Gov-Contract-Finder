@@ -1,6 +1,6 @@
 import SwiftUI
 
-private enum WorkspaceTabV2: String, CaseIterable, Identifiable {
+private enum WorkspaceTab: String, CaseIterable, Identifiable {
     case tasks
     case notes
     case documents
@@ -22,11 +22,11 @@ private enum WorkspaceTabV2: String, CaseIterable, Identifiable {
     }
 }
 
-struct WorkspaceViewV2: View {
+struct WorkspaceView: View {
     @Bindable var workspaceStore: WorkspaceStore
 
     @State private var selectedRecordID: String?
-    @State private var activeTab: WorkspaceTabV2 = .tasks
+    @State private var activeTab: WorkspaceTab = .tasks
 
     @State private var newTaskTitle = ""
     @State private var newNoteTitle = ""
@@ -46,13 +46,13 @@ struct WorkspaceViewV2: View {
             } else {
                 NeoCard {
                     Text("No workspace selected")
-                        .font(DesignTokensV2.Typography.section)
-                        .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                        .font(DesignTokens.Typography.section)
+                        .foregroundStyle(DesignTokens.Colors.textPrimary)
                     BoundedBodyText(value: "Open an opportunity and tap Open Workspace, or select an existing record.")
                 }
             }
         }
-        .background(CyberpunkBackgroundV2())
+        .background(CyberpunkBackground())
         .navigationTitle("Workspace")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -73,10 +73,10 @@ struct WorkspaceViewV2: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text("Workspace")
-                .font(DesignTokensV2.Typography.hero)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.hero)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
             BoundedBodyText(value: "Track execution for each saved opportunity.")
         }
     }
@@ -88,9 +88,9 @@ struct WorkspaceViewV2: View {
 
     private var recordsSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DesignTokensV2.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 ForEach(workspaceStore.records) { record in
-                    FilterChipV2(
+                    FilterChip(
                         title: record.opportunityTitle,
                         selected: selectedRecordID == record.id
                     ) {
@@ -108,19 +108,19 @@ struct WorkspaceViewV2: View {
         let percent = Int(progress * 100)
 
         return NeoCard {
-            HStack(alignment: .top, spacing: DesignTokensV2.Spacing.s) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.s) {
                 BoundedBodyText(
                     value: record.opportunityTitle,
-                    font: DesignTokensV2.Typography.title,
-                    color: DesignTokensV2.Colors.textPrimary
+                    font: DesignTokens.Typography.title,
+                    color: DesignTokens.Colors.textPrimary
                 )
 
                 Spacer()
 
-                ActionPillV2(
+                ActionPill(
                     title: "Remove From Workflow",
-                    tint: DesignTokensV2.Colors.danger,
-                    confirmation: ActionConfirmationV2(
+                    tint: DesignTokens.Colors.danger,
+                    confirmation: ActionConfirmation(
                         title: "Remove this contract?",
                         message: "This removes the contract from your workspace workflow. Watchlist and alerts stay untouched.",
                         confirmLabel: "Remove",
@@ -133,19 +133,19 @@ struct WorkspaceViewV2: View {
 
             BoundedBodyText(
                 value: "Manage tasks, notes, documents, and activity for this contract.",
-                font: DesignTokensV2.Typography.caption
+                font: DesignTokens.Typography.caption
             )
 
-            BoundedBodyText(value: "Completion Progress", font: DesignTokensV2.Typography.bodyStrong, color: DesignTokensV2.Colors.textSecondary)
+            BoundedBodyText(value: "Completion Progress", font: DesignTokens.Typography.bodyStrong, color: DesignTokens.Colors.textSecondary)
 
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(DesignTokensV2.Colors.bg800.opacity(0.8))
+                        .fill(DesignTokens.Colors.bg800.opacity(0.8))
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [DesignTokensV2.Colors.accentCyan, DesignTokensV2.Colors.accentViolet],
+                                colors: [DesignTokens.Colors.accentCyan, DesignTokens.Colors.accentViolet],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -157,21 +157,21 @@ struct WorkspaceViewV2: View {
 
             HStack {
                 Text("\(completed)/\(record.tasks.count) tasks complete")
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
                 Spacer()
                 Text("\(percent)%")
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
             }
         }
     }
 
     private var tabPicker: some View {
-        HStack(spacing: DesignTokensV2.Spacing.xs) {
-            ForEach(WorkspaceTabV2.allCases) { tab in
+        HStack(spacing: DesignTokens.Spacing.xs) {
+            ForEach(WorkspaceTab.allCases) { tab in
                 Button {
-                    withAnimation(DesignTokensV2.Animation.quick) {
+                    withAnimation(DesignTokens.Animation.quick) {
                         activeTab = tab
                     }
                 } label: {
@@ -179,17 +179,17 @@ struct WorkspaceViewV2: View {
                         Image(systemName: tab.icon)
                         Text(tab.title)
                     }
-                    .font(DesignTokensV2.Typography.caption)
-                    .foregroundStyle(activeTab == tab ? DesignTokensV2.Colors.bg900 : DesignTokensV2.Colors.textPrimary)
-                    .padding(.horizontal, DesignTokensV2.Spacing.s)
-                    .padding(.vertical, DesignTokensV2.Spacing.xs)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(activeTab == tab ? DesignTokens.Colors.bg900 : DesignTokens.Colors.textPrimary)
+                    .padding(.horizontal, DesignTokens.Spacing.s)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
                     .background(
-                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                            .fill(activeTab == tab ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.surface2)
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                            .fill(activeTab == tab ? DesignTokens.Colors.accentCyan : DesignTokens.Colors.surface2)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                            .stroke((activeTab == tab ? DesignTokensV2.Colors.accentCyan : DesignTokensV2.Colors.border).opacity(0.8), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                            .stroke((activeTab == tab ? DesignTokens.Colors.accentCyan : DesignTokens.Colors.border).opacity(0.8), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -215,8 +215,8 @@ struct WorkspaceViewV2: View {
         NeoCard {
             HStack {
                 Text("Tasks (\(record.tasks.count))")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
                 Spacer()
                 Button {
                     addTask(record: record)
@@ -225,52 +225,52 @@ struct WorkspaceViewV2: View {
                         Image(systemName: "plus")
                         Text("Add Task")
                     }
-                    .font(DesignTokensV2.Typography.bodyStrong)
-                    .foregroundStyle(DesignTokensV2.Colors.bg900)
-                    .padding(.horizontal, DesignTokensV2.Spacing.s)
-                    .padding(.vertical, DesignTokensV2.Spacing.xs)
+                    .font(DesignTokens.Typography.bodyStrong)
+                    .foregroundStyle(DesignTokens.Colors.bg900)
+                    .padding(.horizontal, DesignTokens.Spacing.s)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(DesignTokensV2.Colors.accentCyan)
+                            .fill(DesignTokens.Colors.accentCyan)
                     )
                 }
                 .buttonStyle(.plain)
             }
 
-            InputFieldV2(title: "Task Name", placeholder: "Review technical requirements", text: $newTaskTitle)
+            InputField(title: "Task Name", placeholder: "Review technical requirements", text: $newTaskTitle)
 
             if record.tasks.isEmpty {
                 BoundedBodyText(value: "No tasks yet.")
             } else {
                 ForEach(record.tasks) { task in
-                    HStack(spacing: DesignTokensV2.Spacing.s) {
+                    HStack(spacing: DesignTokens.Spacing.s) {
                         Button {
                             toggleTask(record: record, task: task)
                         } label: {
                             Image(systemName: task.completed ? "checkmark.square.fill" : "square")
-                                .foregroundStyle(task.completed ? DesignTokensV2.Colors.success : DesignTokensV2.Colors.textSecondary)
+                                .foregroundStyle(task.completed ? DesignTokens.Colors.success : DesignTokens.Colors.textSecondary)
                         }
                         .buttonStyle(.plain)
 
                         BoundedBodyText(
                             value: task.title,
-                            color: task.completed ? DesignTokensV2.Colors.textSecondary : DesignTokensV2.Colors.textPrimary
+                            color: task.completed ? DesignTokens.Colors.textSecondary : DesignTokens.Colors.textPrimary
                         )
 
                         Spacer()
 
                         if let dueDate = task.dueDate {
-                            BoundedBodyText(value: shortDate(dueDate), font: DesignTokensV2.Typography.caption)
+                            BoundedBodyText(value: shortDate(dueDate), font: DesignTokens.Typography.caption)
                         }
                     }
-                    .padding(DesignTokensV2.Spacing.s)
+                    .padding(DesignTokens.Spacing.s)
                     .background(
-                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                            .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                            .fill(DesignTokens.Colors.surface2.opacity(0.5))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                            .stroke(DesignTokensV2.Colors.border.opacity(0.65), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                            .stroke(DesignTokens.Colors.border.opacity(0.65), lineWidth: 1)
                     )
                 }
             }
@@ -281,45 +281,45 @@ struct WorkspaceViewV2: View {
         NeoCard {
             HStack {
                 Text("Notes")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
                 Spacer()
                 Button {
                     addNote(record: record)
                 } label: {
                     Text("Add Note")
-                        .font(DesignTokensV2.Typography.bodyStrong)
-                        .foregroundStyle(DesignTokensV2.Colors.bg900)
-                        .padding(.horizontal, DesignTokensV2.Spacing.s)
-                        .padding(.vertical, DesignTokensV2.Spacing.xs)
+                        .font(DesignTokens.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokens.Colors.bg900)
+                        .padding(.horizontal, DesignTokens.Spacing.s)
+                        .padding(.vertical, DesignTokens.Spacing.xs)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(DesignTokensV2.Colors.accentCyan)
+                                .fill(DesignTokens.Colors.accentCyan)
                         )
                 }
                 .buttonStyle(.plain)
             }
 
-            InputFieldV2(title: "Title", placeholder: "Capture strategy", text: $newNoteTitle)
+            InputField(title: "Title", placeholder: "Capture strategy", text: $newNoteTitle)
 
             ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                    .fill(DesignTokensV2.Colors.bg800.opacity(0.7))
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                    .fill(DesignTokens.Colors.bg800.opacity(0.7))
                     .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                            .stroke(DesignTokensV2.Colors.border, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                            .stroke(DesignTokens.Colors.border, lineWidth: 1)
                     )
 
                 TextEditor(text: $newNoteBody)
                     .scrollContentBackground(.hidden)
-                    .font(DesignTokensV2.Typography.body)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
-                    .padding(DesignTokensV2.Spacing.xs)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
+                    .padding(DesignTokens.Spacing.xs)
 
                 if newNoteBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text("Add a note... Use @mention to notify team members")
-                        .font(DesignTokensV2.Typography.body)
-                        .foregroundStyle(DesignTokensV2.Colors.textSecondary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundStyle(DesignTokens.Colors.textSecondary)
                         .padding(.horizontal, 14)
                         .padding(.top, 14)
                         .allowsHitTesting(false)
@@ -328,25 +328,25 @@ struct WorkspaceViewV2: View {
             .frame(minHeight: 132)
 
             ForEach(record.notes) { note in
-                VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xs) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     BoundedBodyText(
                         value: note.title,
-                        font: DesignTokensV2.Typography.bodyStrong,
-                        color: DesignTokensV2.Colors.textPrimary
+                        font: DesignTokens.Typography.bodyStrong,
+                        color: DesignTokens.Colors.textPrimary
                     )
                     if !note.body.isEmpty {
                         BoundedBodyText(value: note.body)
                     }
-                    BoundedBodyText(value: relativeDate(note.updatedAt), font: DesignTokensV2.Typography.caption)
+                    BoundedBodyText(value: relativeDate(note.updatedAt), font: DesignTokens.Typography.caption)
                 }
-                .padding(DesignTokensV2.Spacing.s)
+                .padding(DesignTokens.Spacing.s)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .fill(DesignTokens.Colors.surface2.opacity(0.5))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                        .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                        .stroke(DesignTokens.Colors.border.opacity(0.8), lineWidth: 1)
                 )
             }
         }
@@ -356,8 +356,8 @@ struct WorkspaceViewV2: View {
         NeoCard {
             HStack {
                 Text("Documents (\(record.documents.count))")
-                    .font(DesignTokensV2.Typography.section)
-                    .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                    .font(DesignTokens.Typography.section)
+                    .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                 Spacer()
 
@@ -365,51 +365,51 @@ struct WorkspaceViewV2: View {
                     addDocument(record: record)
                 } label: {
                     Label("Upload", systemImage: "plus")
-                        .font(DesignTokensV2.Typography.bodyStrong)
-                        .foregroundStyle(DesignTokensV2.Colors.bg900)
-                        .padding(.horizontal, DesignTokensV2.Spacing.s)
-                        .padding(.vertical, DesignTokensV2.Spacing.xs)
+                        .font(DesignTokens.Typography.bodyStrong)
+                        .foregroundStyle(DesignTokens.Colors.bg900)
+                        .padding(.horizontal, DesignTokens.Spacing.s)
+                        .padding(.vertical, DesignTokens.Spacing.xs)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(DesignTokensV2.Colors.accentCyan)
+                                .fill(DesignTokens.Colors.accentCyan)
                         )
                 }
                 .buttonStyle(.plain)
             }
 
-            InputFieldV2(title: "Document Name", placeholder: "Capability Statement", text: $newDocName)
-            InputFieldV2(title: "Document URL", placeholder: "https://...", text: $newDocURL)
+            InputField(title: "Document Name", placeholder: "Capability Statement", text: $newDocName)
+            InputField(title: "Document URL", placeholder: "https://...", text: $newDocURL)
 
             ForEach(record.documents) { document in
                 if let url = URL(string: document.url) {
                     Link(destination: url) {
-                        HStack(spacing: DesignTokensV2.Spacing.s) {
+                        HStack(spacing: DesignTokens.Spacing.s) {
                             Image(systemName: "doc.text")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                                .foregroundStyle(DesignTokens.Colors.accentCyan)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 BoundedBodyText(
                                     value: document.name,
-                                    font: DesignTokensV2.Typography.bodyStrong,
-                                    color: DesignTokensV2.Colors.textPrimary
+                                    font: DesignTokens.Typography.bodyStrong,
+                                    color: DesignTokens.Colors.textPrimary
                                 )
-                                BoundedBodyText(value: url.pathExtension.isEmpty ? "FILE" : url.pathExtension.uppercased(), font: DesignTokensV2.Typography.caption)
+                                BoundedBodyText(value: url.pathExtension.isEmpty ? "FILE" : url.pathExtension.uppercased(), font: DesignTokens.Typography.caption)
                             }
 
                             Spacer()
 
                             Image(systemName: "arrow.down.to.line")
-                                .foregroundStyle(DesignTokensV2.Colors.accentCyan)
+                                .foregroundStyle(DesignTokens.Colors.accentCyan)
                         }
-                        .padding(DesignTokensV2.Spacing.s)
+                        .padding(DesignTokens.Spacing.s)
                         .background(
-                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                .fill(DesignTokensV2.Colors.surface2.opacity(0.5))
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                .fill(DesignTokens.Colors.surface2.opacity(0.5))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokensV2.Radius.button, style: .continuous)
-                                .stroke(DesignTokensV2.Colors.border.opacity(0.8), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.button, style: .continuous)
+                                .stroke(DesignTokens.Colors.border.opacity(0.8), lineWidth: 1)
                         )
                     }
                 }
@@ -420,30 +420,30 @@ struct WorkspaceViewV2: View {
     private func activityView(record: WorkspaceRecord) -> some View {
         NeoCard {
             Text("Recent Activity")
-                .font(DesignTokensV2.Typography.section)
-                .foregroundStyle(DesignTokensV2.Colors.textPrimary)
+                .font(DesignTokens.Typography.section)
+                .foregroundStyle(DesignTokens.Colors.textPrimary)
 
             if record.activity.isEmpty {
                 BoundedBodyText(value: "No activity yet.")
             } else {
                 ForEach(Array(record.activity.prefix(8)).indices, id: \.self) { index in
                     let activity = record.activity[index]
-                    HStack(alignment: .top, spacing: DesignTokensV2.Spacing.s) {
+                    HStack(alignment: .top, spacing: DesignTokens.Spacing.s) {
                         VStack(spacing: 2) {
                             Circle()
-                                .fill(DesignTokensV2.Colors.accentCyan)
+                                .fill(DesignTokens.Colors.accentCyan)
                                 .frame(width: 9, height: 9)
                             if index < min(record.activity.count, 8) - 1 {
                                 Rectangle()
-                                    .fill(DesignTokensV2.Colors.accentCyan.opacity(0.35))
+                                    .fill(DesignTokens.Colors.accentCyan.opacity(0.35))
                                     .frame(width: 1)
                             }
                         }
                         .frame(width: 10)
 
-                        VStack(alignment: .leading, spacing: DesignTokensV2.Spacing.xxs) {
-                            BoundedBodyText(value: activity.text, color: DesignTokensV2.Colors.textPrimary)
-                            BoundedBodyText(value: shortDate(activity.createdAt), font: DesignTokensV2.Typography.caption)
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                            BoundedBodyText(value: activity.text, color: DesignTokens.Colors.textPrimary)
+                            BoundedBodyText(value: shortDate(activity.createdAt), font: DesignTokens.Typography.caption)
                         }
                     }
                 }

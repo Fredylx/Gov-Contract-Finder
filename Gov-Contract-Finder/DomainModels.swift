@@ -236,7 +236,7 @@ struct WorkspaceRecord: Identifiable, Codable, Hashable {
     var updatedAt: Date
 }
 
-enum AppearanceModeV2: String, CaseIterable, Codable, Identifiable {
+enum AppearanceMode: String, CaseIterable, Codable, Identifiable {
     case system
     case light
     case dark

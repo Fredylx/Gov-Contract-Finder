@@ -1,6 +1,6 @@
 import Foundation
 
-struct OpportunitySearchFiltersV2: Sendable, Equatable {
+struct OpportunitySearchFilters: Sendable, Equatable {
     var query: String = ""
     var postedFrom: String?
     var postedTo: String?
@@ -12,13 +12,13 @@ struct OpportunitySearchFiltersV2: Sendable, Equatable {
     var order: String = "desc"
 }
 
-struct OpportunitySearchPageV2: Sendable {
+struct OpportunitySearchPage: Sendable {
     var opportunities: [Opportunity]
     var totalRecords: Int
 }
 
 protocol OpportunityRepository {
-    func search(filters: OpportunitySearchFiltersV2, limit: Int, offset: Int) async throws -> OpportunitySearchPageV2
+    func search(filters: OpportunitySearchFilters, limit: Int, offset: Int) async throws -> OpportunitySearchPage
 }
 
 protocol SAMOpportunityFetching {
@@ -46,7 +46,7 @@ struct SAMOpportunityRepository: OpportunityRepository {
         self.client = client
     }
 
-    func search(filters: OpportunitySearchFiltersV2, limit: Int, offset: Int) async throws -> OpportunitySearchPageV2 {
+    func search(filters: OpportunitySearchFilters, limit: Int, offset: Int) async throws -> OpportunitySearchPage {
         let response = try await client.fetchOpportunities(
             query: filters.query,
             postedFrom: filters.postedFrom,
@@ -61,7 +61,7 @@ struct SAMOpportunityRepository: OpportunityRepository {
             offset: offset
         )
 
-        return OpportunitySearchPageV2(
+        return OpportunitySearchPage(
             opportunities: response.opportunitiesData,
             totalRecords: response.totalRecords ?? response.opportunitiesData.count
         )
